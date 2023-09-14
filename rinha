@@ -1,0 +1,11 @@
+#!/bin/bash
+
+script="$1"
+normalized_path="$(realpath "$script")"
+
+# Check if the path exists before running the program
+if [ -e "$normalized_path" ]; then
+    ./build/bin/native/releaseExecutable/rinha-compiler-kotlin.kexe "$normalized_path"
+else
+    echo "File not found: $normalized_path"
+fi

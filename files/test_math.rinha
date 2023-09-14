@@ -1,0 +1,28 @@
+let t_add = 10 + 20;
+let t_sub = 5 - 10;
+let t_mul = 2 * 3;
+let t_div = 100/5;
+let t_div_zero = 10/0;
+let t_rem = 10 % 2;
+let t_true_1 = 10 == 10;
+let t_true_2 = "a" == "a";
+let t_true_3 = true == true;
+let t_false_1 = 10 != 10;
+let t_false_2 = "a" != "a";
+let t_false_3 = true != false;
+let t_str_add_1 = "a" + "b";
+let t_str_add_2 = "a" + 1;
+let t_str_add_3 = 1 + "a";
+let t_str_add_4 = "a" + dontExist;
+let t_lt = 1 < 2;
+let t_lt_false = 2 < 1;
+let t_lte = 1 <= 1;
+let t_lte_false = 2 <= 1;
+let t_gt = 2 > 1;
+let t_gt_false = 1 > 2;
+let t_gte = 2 >= 2;
+let t_gte_false = 1 >= 2;
+let t_and_false = true && false;
+let t_and_true = true && true;
+let t_or = false || true;
+print("done")

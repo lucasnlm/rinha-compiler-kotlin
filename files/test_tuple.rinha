@@ -1,0 +1,5 @@
+let target = (5, 10);
+let primeiro = first(target);
+let segundo = second(target);
+let soma = primeiro + segundo;
+print("soma = " + soma)

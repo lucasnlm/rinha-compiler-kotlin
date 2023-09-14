@@ -1,0 +1,6 @@
+let a = 10;
+let b = false;
+let c = true;
+let d = "Hello";
+let e = (1, 2);
+a

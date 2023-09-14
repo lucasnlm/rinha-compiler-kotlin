@@ -46,3 +46,5 @@ To run the tests, you can use the following command:
 ```bash
 ./gradlew allTests
 ```
+
+[banner]: ./img/banner.png

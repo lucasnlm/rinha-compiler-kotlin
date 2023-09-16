@@ -1,0 +1,2 @@
+let x = print(10);
+print("x must be 10. It is " + x)

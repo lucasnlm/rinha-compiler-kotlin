@@ -232,11 +232,21 @@ class ExpressionRunner(
         scope: MutableMap<String, Any?>,
     ): Any? {
         val value = runExpression(expression.value, scope)
+
         if (!context.isTesting) {
             println(value)
         }
-        context.output.add(value.toString())
-        return null
+
+        context.output.run {
+            if (size > context.maxOutputSize.coerceAtLeast(10)) {
+                // Clean the output if it's too big
+                clear()
+            }
+
+            add(value.toString())
+        }
+
+        return value
     }
 
     private fun callExpression(

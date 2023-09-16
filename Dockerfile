@@ -15,8 +15,7 @@ RUN pacman -Syyyy && \
     curl -L https://github.com/lucasnlm/rinha-compiler-kotlin/releases/download/1.0.0/rinha-compiler-kotlin-linux-64.zip > kotlin-rinha.zip  && \
     unzip kotlin-rinha.zip  && \
     rm kotlin-rinha.zip && \
-    mv rinha-compiler-kotlin.kexe rinhak && \
-    bash
+    mv rinha-compiler-kotlin.kexe rinhak
 
 ENV PATH="${PATH}:/root/.cargo/bin/"
 

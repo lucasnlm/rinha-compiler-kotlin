@@ -48,3 +48,18 @@ To run the tests, you can use the following command:
 ```
 
 [banner]: ./img/banner.png
+
+## Docker
+
+You can also use the docker image to run the interpreter.
+
+```bash
+docker build -t "rinha:Dockerfile" .
+docker run -it rinha:Dockerfile
+
+# rinhak will run the json AST of rinha generated code
+# rinha should already be available to use too.
+./rinhak files/print.json
+```
+
+You can also call `rinha file.rinha` to generate a new Json.

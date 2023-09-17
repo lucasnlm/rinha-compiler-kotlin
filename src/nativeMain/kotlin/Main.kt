@@ -1,17 +1,26 @@
 import arguments.ArgumentParser
 import parser.AstParser
+import repl.ReplManager
 import runner.ExpressionRunner
 import kotlin.time.measureTime
 
 fun main(args: Array<String> = arrayOf()) {
-    measureTime {
-        // Validate the arguments
-        val arguments = ArgumentParser.parse(args).onFailure {
-            println("Error: ${it.message}")
-        }.getOrNull() ?: return
+    // Validate the arguments
+    val arguments = ArgumentParser.parse(args).onFailure {
+        println("Error: ${it.message}")
+    }.getOrNull() ?: return
 
+    if (arguments.inputAstFile.isEmpty()) {
+        runRepl()
+    } else {
+        runFromSource(arguments.inputAstFile)
+    }
+}
+
+fun runFromSource(fileSource: String) {
+    measureTime {
         // Parse the AST file from Json a Kotlin models
-        val astModal = AstParser.parseAst(arguments.inputAstFile).onFailure {
+        val astModal = AstParser.parseAst(fileSource).onFailure {
             println("Error: ${it.message}")
         }.getOrNull() ?: return
 
@@ -25,4 +34,8 @@ fun main(args: Array<String> = arrayOf()) {
     }.let {
         println("Time: ${it.inWholeMilliseconds}ms")
     }
+}
+
+fun runRepl() {
+    ReplManager.run()
 }

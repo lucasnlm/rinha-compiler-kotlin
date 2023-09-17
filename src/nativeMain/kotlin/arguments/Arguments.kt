@@ -5,5 +5,5 @@ package arguments
  * @property inputAstFile The input AST file.
  */
 data class Arguments(
-    val inputAstFile: String,
+    val inputAstFile: String = "",
 )

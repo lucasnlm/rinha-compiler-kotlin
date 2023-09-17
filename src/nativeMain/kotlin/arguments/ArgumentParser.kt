@@ -15,7 +15,7 @@ object ArgumentParser {
      */
     fun parse(args: Array<String>): Result<Arguments> {
         return if (args.isEmpty()) {
-            Result.failure(IllegalArgumentException("No arguments provided"))
+            return Result.success(Arguments())
         } else if (!isValidAstFilePath(args[0])) {
             Result.failure(IllegalArgumentException("Invalid AST file path"))
         } else {

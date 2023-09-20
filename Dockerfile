@@ -12,7 +12,7 @@ RUN pacman -Syyyy && \
     pacman -S --noconfirm gcc rustup git unzip libxcrypt-compat && \
     rustup default stable  && \
     cargo install rinha  && \
-    curl -L https://github.com/lucasnlm/rinha-compiler-kotlin/releases/download/1.0.0/rinha-compiler-kotlin-linux-64.zip > kotlin-rinha.zip  && \
+    curl -L https://github.com/lucasnlm/rinha-compiler-kotlin/releases/download/1.1.0/rinha-compiler-kotlin-linux-64.zip > kotlin-rinha.zip  && \
     unzip kotlin-rinha.zip  && \
     rm kotlin-rinha.zip
 

@@ -1,28 +1,34 @@
 import arguments.ArgumentParser
-import parser.AstParser
-import runner.ExpressionRunner
-import kotlin.time.measureTime
+import repl.ReplManager
+import runner.FileRunner
 
-fun main(args: Array<String> = arrayOf()) {
-    measureTime {
-        // Validate the arguments
-        val arguments = ArgumentParser.parse(args).onFailure {
-            println("Error: ${it.message}")
-        }.getOrNull() ?: return
+fun main(originalArguments: Array<String> = arrayOf()) {
+    // Validate the arguments
+    val arguments = ArgumentParser.parse(originalArguments)
 
-        // Parse the AST file from Json a Kotlin models
-        val astModal = AstParser.parseAst(arguments.inputAstFile).onFailure {
-            println("Error: ${it.message}")
-        }.getOrNull() ?: return
-
-        // Create a new Runner to run the expressions
-        runCatching {
-            ExpressionRunner()
-                .run(astModal.expressions)
-        }.onFailure {
-            println("Error: ${it.message}")
-        }
-    }.let {
-        println("Time: ${it.inWholeMilliseconds}ms")
+    // Run the given argument
+    when {
+        arguments.showHelp -> showHelp()
+        arguments.astFilePath?.isBlank() == false -> FileRunner.runFromAstFile(arguments.astFilePath)
+        arguments.sourceFilePath?.isBlank() == false -> FileRunner.runFromRinhaFile(arguments.sourceFilePath)
+        arguments.runRepl -> runRepl()
+        else -> runRepl()
     }
+}
+
+fun showHelp() {
+    val help = """
+    Kotlin Rinha Interpreter
+      Usage: rinhak [options] [source file]
+      Options:
+          help          Show this help message and exit.
+          repl          Run the REPL.
+          <file.json>   Run from AST file. E.g: rinhak test.json
+          <file.rinha>  Run from Rinha file. E.g: rinhak test.rinha
+    """.trimIndent()
+    println(help)
+}
+
+fun runRepl() {
+    ReplManager.run()
 }

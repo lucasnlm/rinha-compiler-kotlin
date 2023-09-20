@@ -42,7 +42,7 @@ class AstParserTest {
 
     @Test
     fun `success to parse sum rinha`() {
-        val result = mockAst(content = HardcodedScripts.sum)
+        val result = mockAst(content = HardcodedScripts.sumAst)
         assertTrue(result.isSuccess)
     }
 }

@@ -1,7 +1,10 @@
 package runner
 
+import com.github.h0tk3y.betterParse.grammar.parseToEnd
+import com.github.h0tk3y.betterParse.parser.ParseException
 import expressions.BinaryOperator
 import expressions.Expression
+import parser.RinhaGrammar
 import platform.posix.FP_NAN
 import platform.posix.NAN
 
@@ -9,17 +12,91 @@ class ExpressionRunner(
     val context: RunTimeContext = RunTimeContext(),
 ) {
     /**
+     * Run the expressions from a Rinha source code.
+     * @param source The source code to run.
+     * @return The result of the last expression.
+     */
+    fun runFromSource(source: String): Any? {
+        return runCatching {
+            RinhaGrammar.parseToEnd(source)
+        }.onFailure {
+            if (it is ParseException) {
+                println("e: Syntax error")
+            } else {
+                println("e: ${it.message}")
+            }
+        }.onSuccess { expressions ->
+            run(expressions)?.also { response ->
+                val last = context.output.lastOrNull()
+                if (last == null || last != response.toString()) {
+                    println(response.toString())
+                }
+            }
+        }.getOrNull()
+    }
+
+    /**
      * Run the expressions from the AST.
      * @param expressions The list of expressions to run.
      * @throws RuntimeException If any expression fails.
+     * @return The result of the last expression.
      */
-    fun run(expressions: List<Expression>) {
+    fun run(expressions: List<Expression>): Any? {
         if (expressions.isEmpty()) {
             throw RuntimeException("No expressions to run")
         }
 
-        expressions.forEach {
-            runExpression(it, context.variables)
+        return expressions.fold<Expression, Any?>(null) { _, expression ->
+            runExpression(
+                expression = expression,
+                scope = context.variables,
+            )
+        }
+    }
+
+    /**
+     * Clear the output.
+     */
+    fun clearOutput() {
+        context.output.clear()
+    }
+
+    /**
+     * Print the global scope.
+     */
+    fun printGlobalScope() {
+        if (context.variables.isEmpty()) {
+            println("{}")
+        } else {
+            println("{")
+            context.variables.forEach {
+                when (it.value) {
+                    is Int -> {
+                        val variable = it.value as Int
+                        println("  ${it.key}: $variable,")
+                    }
+                    is String -> {
+                        val variable = it.value as String
+                        println("  ${it.key}: \"$variable\",")
+                    }
+                    is Boolean -> {
+                        val variable = it.value as Boolean
+                        println("  ${it.key}: $variable,")
+                    }
+                    is Expression.Function -> {
+                        val variable = it.value as Expression.Function
+                        println("  ${it.key}: $variable,")
+                    }
+                    else -> {
+                        if (it.value == null) {
+                            println("  ${it.key}: null,")
+                        } else {
+                            println("  ${it.key}: Any,")
+                        }
+                    }
+                }
+            }
+            println("}")
         }
     }
 
@@ -179,9 +256,19 @@ class ExpressionRunner(
     ): Any? {
         val condition = runExpression(expression.condition, scope)
         return if (condition == true) {
-            runExpression(expression.then, scope)
+            expression.then.fold<Expression, Any?>(null) { _, functionExpression ->
+                runExpression(
+                    expression = functionExpression,
+                    scope = scope,
+                )
+            }
         } else {
-            runExpression(expression.otherwise, scope)
+            expression.otherwise?.fold<Expression, Any?>(null) { _, functionExpression ->
+                runExpression(
+                    expression = functionExpression,
+                    scope = scope,
+                )
+            }
         }
     }
 

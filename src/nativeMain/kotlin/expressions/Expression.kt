@@ -29,7 +29,13 @@ sealed class Expression {
         val name: String? = null,
         val parameters: List<String>,
         val value: List<Expression>,
-    ) : Expression()
+    ) : Expression() {
+        override fun toString(): String {
+            val fnName = name ?: "fn"
+            val params = parameters.joinToString(", ")
+            return "$fnName($params) {...}"
+        }
+    }
 
     /**
      * Represents an if expression in the AST.
@@ -39,8 +45,8 @@ sealed class Expression {
      */
     data class If(
         val condition: Expression,
-        val then: Expression,
-        val otherwise: Expression,
+        val then: List<Expression>,
+        val otherwise: List<Expression>? = null,
     ) : Expression()
 
     /**

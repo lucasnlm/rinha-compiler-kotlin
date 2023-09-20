@@ -225,12 +225,11 @@ object AstParser {
         val then = obj(EXPRESSION_IF_THEN)?.parseExpression()
             ?: throw AstParseException("Invalid then at If", tryGetLocation())
         val otherwise = obj(EXPRESSION_IF_OTHERWISE)?.parseExpression()
-            ?: throw AstParseException("Invalid otherwise at If", tryGetLocation())
 
         return Expression.If(
             condition = condition,
-            then = then,
-            otherwise = otherwise,
+            then = listOf(then),
+            otherwise = otherwise?.let { listOf(it) },
         )
     }
 

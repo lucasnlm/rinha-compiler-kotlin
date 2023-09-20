@@ -1,8 +1,10 @@
 package runner
 
+import com.github.h0tk3y.betterParse.grammar.parseToEnd
 import expressions.Expression
 import mocks.AstHelper
 import mocks.HardcodedScripts
+import parser.RinhaGrammar
 import platform.posix.NAN
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,18 +13,12 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ExpressionRunnerTest {
-    private fun testScript(target: String, block: RunTimeContext.() -> Unit) {
-        val result = AstHelper.mockAst(content = target).getOrThrow()
-        val runner = ExpressionRunner(
-            context = RunTimeContext(isTesting = true),
-        )
-        runner.run(result.expressions)
-        block(runner.context)
-    }
-
     @Test
     fun `test basic let script`() {
-        testScript(HardcodedScripts.testLet) {
+        testScript(
+            ast = HardcodedScripts.testLetAst,
+            source = HardcodedScripts.testLetSource,
+        ) {
             assertEquals(5, variables.size)
             assertEquals(10, variables["a"])
             assertEquals(false, variables["b"])
@@ -35,7 +31,10 @@ class ExpressionRunnerTest {
 
     @Test
     fun `test basic math script`() {
-        testScript(HardcodedScripts.testMath) {
+        testScript(
+            ast = HardcodedScripts.testMathAst,
+            source = HardcodedScripts.testMathSource,
+        ) {
             assertEquals(27, variables.size)
             assertEquals(30, variables["t_add"])
             assertEquals(-5, variables["t_sub"])
@@ -69,7 +68,10 @@ class ExpressionRunnerTest {
 
     @Test
     fun `test tuple script`() {
-        testScript(HardcodedScripts.testTuple) {
+        testScript(
+            ast = HardcodedScripts.testTupleAst,
+            source = HardcodedScripts.testTupleSource,
+        ) {
             assertEquals(4, variables.size)
             assertEquals(1, output.size)
             assertEquals(Pair(5, 10), variables["target"])
@@ -82,7 +84,10 @@ class ExpressionRunnerTest {
 
     @Test
     fun `test sum script`() {
-        testScript(HardcodedScripts.sum) {
+        testScript(
+            ast = HardcodedScripts.sumAst,
+            source = HardcodedScripts.sumSource,
+        ) {
             assertEquals(1, variables.size)
             assertEquals(1, output.size)
             assertTrue {
@@ -94,7 +99,10 @@ class ExpressionRunnerTest {
 
     @Test
     fun `test print script`() {
-        testScript(HardcodedScripts.print) {
+        testScript(
+            ast = HardcodedScripts.printAst,
+            source = HardcodedScripts.printSource,
+        ) {
             assertTrue(variables.isEmpty())
             assertEquals(1, output.size)
             assertEquals("Hello world", output.first())
@@ -103,7 +111,10 @@ class ExpressionRunnerTest {
 
     @Test
     fun `test fib script`() {
-        testScript(HardcodedScripts.fib) {
+        testScript(
+            ast = HardcodedScripts.fibAst,
+            source = HardcodedScripts.fibSource,
+        ) {
             assertEquals(1, variables.size)
             assertEquals(1, output.size)
             assertTrue {
@@ -115,7 +126,10 @@ class ExpressionRunnerTest {
 
     @Test
     fun `test combination script`() {
-        testScript(HardcodedScripts.combination) {
+        testScript(
+            ast = HardcodedScripts.combinationAst,
+            source = HardcodedScripts.combinationSource,
+        ) {
             assertEquals(1, variables.size)
             assertEquals(1, output.size)
             assertTrue {
@@ -123,5 +137,33 @@ class ExpressionRunnerTest {
             }
             assertEquals("45", output.first())
         }
+    }
+
+    private fun testScript(ast: String, source: String, block: RunTimeContext.() -> Unit) {
+        testScriptFromAst(ast) {
+            block(this)
+        }
+        testScriptFromSource(source) {
+            block(this)
+        }
+    }
+
+    private fun testScriptFromAst(target: String, block: RunTimeContext.() -> Unit) {
+        val result = AstHelper.mockAst(content = target).getOrThrow()
+        val runner = ExpressionRunner(
+            context = RunTimeContext(isTesting = true),
+        )
+        runner.run(result.expressions)
+        block(runner.context)
+    }
+
+    private fun testScriptFromSource(source: String, block: RunTimeContext.() -> Unit) {
+        val result = RinhaGrammar.parseToEnd(source)
+        val runner = ExpressionRunner(
+            context = RunTimeContext(isTesting = true),
+        )
+
+        runner.run(result)
+        block(runner.context)
     }
 }

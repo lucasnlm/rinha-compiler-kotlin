@@ -1,34 +1,46 @@
 package repl
 
-import com.github.h0tk3y.betterParse.grammar.parseToEnd
-import parser.RinhaGrammar
+import runner.ExpressionRunner
+import runner.RunTimeContext
 
 /**
  * Manages the REPL.
  */
 object ReplManager {
     fun run() {
-        println("Rinha Kotlin Interpreter")
+        println("Kotlin Rinha Interpreter")
+        println("------------------------")
+        println("  Type '!q' to exit.")
+        println("  Type '!s' to see the variable scope.")
+        println()
+
+        val runner = ExpressionRunner(
+            context = RunTimeContext(),
+        )
 
         while (true) {
+            runner.clearOutput()
+
             print("❯ ")
 
             val input = readlnOrNull()?.trim() ?: break
 
-            if (input == "quit") {
-                break
+            when {
+                SCOPE_PARAMS.contains(input) -> {
+                    runner.printGlobalScope()
+                    continue
+                }
+                QUIT_PARAMS.contains(input) -> {
+                    // Bye bye!
+                    break
+                }
+                else -> {
+                    runner.runFromSource(input)
+                }
             }
-
-            RinhaGrammar.parseToEnd(input).also {
-                println(it)
-            }
-
-//            RinhaParser.parseString(sanitizedInput).onSuccess {
-//                println(it)
-//            }.onFailure {
-//                println("Error: ${it.message}")
-//            }
-
         }
     }
+
+    private val QUIT_PARAMS = listOf("!q", "!quit")
+    private val SCOPE_PARAMS = listOf("!s", "!scope")
 }

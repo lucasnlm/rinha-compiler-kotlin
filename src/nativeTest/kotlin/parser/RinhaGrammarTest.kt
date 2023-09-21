@@ -142,17 +142,17 @@ class RinhaGrammarTest {
         mapOf(
             "(10, 20)" to Expression.TupleValue(Expression.IntValue(10), Expression.IntValue(20)),
             "first((1,2))" to Expression.First(
-                listOf(Expression.TupleValue(Expression.IntValue(1), Expression.IntValue(2)))
+                listOf(Expression.TupleValue(Expression.IntValue(1), Expression.IntValue(2))),
             ),
             "first(someVar)" to Expression.First(
-                listOf(Expression.Var("someVar"))
+                listOf(Expression.Var("someVar")),
 
             ),
             "second((1,2))" to Expression.Second(
-                listOf(Expression.TupleValue(Expression.IntValue(1), Expression.IntValue(2)))
+                listOf(Expression.TupleValue(Expression.IntValue(1), Expression.IntValue(2))),
             ),
             "second(someVar)" to Expression.Second(
-                listOf(Expression.Var("someVar"))
+                listOf(Expression.Var("someVar")),
             ),
             "(10, false)" to Expression.TupleValue(Expression.IntValue(10), Expression.BoolValue(false)),
             "(false, true)" to Expression.TupleValue(Expression.BoolValue(false), Expression.BoolValue(true)),

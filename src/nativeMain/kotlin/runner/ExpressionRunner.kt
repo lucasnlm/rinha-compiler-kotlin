@@ -134,9 +134,9 @@ class ExpressionRunner(
         scope: MutableMap<String, Any?>,
     ): Any? {
         val value =
-            scope[expression.name] ?:
-            context.variables[expression.name] ?:
-            throw RuntimeException("variable '${expression.name}' is not defined")
+            scope[expression.name]
+                ?: context.variables[expression.name]
+                ?: throw RuntimeException("variable '${expression.name}' is not defined")
 
         return if (value is Lazy<*>) {
             value.value

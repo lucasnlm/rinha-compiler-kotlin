@@ -26,9 +26,7 @@ sealed class Expression {
         val value: List<Expression>,
     ) : Expression() {
         override fun toString(): String {
-            val fnName = name ?: "fn"
-            val params = parameters.joinToString(", ")
-            return "$fnName($params) {...}"
+            return "<#closure>"
         }
     }
 

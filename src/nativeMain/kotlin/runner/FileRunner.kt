@@ -10,21 +10,17 @@ object FileRunner {
      * @param fileSource The file source.
      */
     fun runFromAstFile(fileSource: String) {
-        measureTime {
-            // Parse the AST file from Json a Kotlin models
-            val astModal = AstParser.parseAst(fileSource).onFailure {
-                println("e: ${it.message}")
-            }.getOrNull() ?: return
+        // Parse the AST file from Json a Kotlin models
+        val astModal = AstParser.parseAst(fileSource).onFailure {
+            println("e: ${it.message}")
+        }.getOrNull() ?: return
 
-            // Create a new Runner to run the expressions
-            runCatching {
-                ExpressionRunner()
-                    .run(astModal.expressions)
-            }.onFailure {
-                println("e: ${it.message}")
-            }
-        }.let {
-            println("Time: ${it.inWholeMilliseconds}ms")
+        // Create a new Runner to run the expressions
+        runCatching {
+            ExpressionRunner()
+                .run(astModal.expressions)
+        }.onFailure {
+            println("e: ${it.message}")
         }
     }
 
@@ -33,20 +29,16 @@ object FileRunner {
      * @param fileSource The file source.
      */
     fun runFromRinhaFile(fileSource: String) {
-        measureTime {
-            // Parse file
-            val fileContent = FileReader.readFile(fileSource) ?: return
+        // Parse file
+        val fileContent = FileReader.readFile(fileSource) ?: return
 
-            // Create a new Runner to run the expressions
-            runCatching {
-                ExpressionRunner().run {
-                    runFromSource(fileContent)
-                }
-            }.onFailure {
-                println("e: ${it.message}")
+        // Create a new Runner to run the expressions
+        runCatching {
+            ExpressionRunner().run {
+                runFromSource(fileContent)
             }
-        }.let {
-            println("Time: ${it.inWholeMilliseconds}ms")
+        }.onFailure {
+            println("e: ${it.message}")
         }
     }
 }

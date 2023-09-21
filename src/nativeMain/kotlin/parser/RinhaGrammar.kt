@@ -69,7 +69,7 @@ object RinhaGrammar : Grammar<List<Expression>>() {
     private val CHARLIT by regexToken("'.'")
     private val STRINGLIT by regexToken("\".*?\"")
 
-    private val ID by regexToken("[A-Za-z]\\w*")
+    private val ID by regexToken("[A-Za-z_]\\w*")
 
     private val WS by regexToken("\\s+", ignore = true)
     private val NEWLINE by regexToken("[\r\n]+", ignore = true)

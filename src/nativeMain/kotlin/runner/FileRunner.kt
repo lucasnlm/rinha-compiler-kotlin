@@ -13,7 +13,7 @@ object FileRunner {
         measureTime {
             // Parse the AST file from Json a Kotlin models
             val astModal = AstParser.parseAst(fileSource).onFailure {
-                println("Error: ${it.message}")
+                println("e: ${it.message}")
             }.getOrNull() ?: return
 
             // Create a new Runner to run the expressions

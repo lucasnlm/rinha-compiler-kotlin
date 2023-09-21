@@ -66,10 +66,13 @@ class ExpressionRunner(
      * Dump the output.
      */
     fun dumpOutput() {
-        context.output.joinToString(separator = "\n").also {
-            if (!context.isTesting) {
-                println(it)
+        context.output.run {
+            joinToString(separator = "\n").also {
+                if (!context.isTesting && it.isNotBlank()) {
+                    println(it)
+                }
             }
+            clear()
         }
     }
 
@@ -77,38 +80,42 @@ class ExpressionRunner(
      * Print the global scope.
      */
     fun printGlobalScope() {
-        if (context.variables.isEmpty()) {
-            println("{}")
-        } else {
-            println("{")
-            context.variables.forEach {
-                when (it.value) {
-                    is Int -> {
-                        val variable = it.value as Int
-                        println("  ${it.key}: $variable,")
-                    }
-                    is String -> {
-                        val variable = it.value as String
-                        println("  ${it.key}: \"$variable\",")
-                    }
-                    is Boolean -> {
-                        val variable = it.value as Boolean
-                        println("  ${it.key}: $variable,")
-                    }
-                    is Expression.Function -> {
-                        val variable = it.value as Expression.Function
-                        println("  ${it.key}: $variable,")
-                    }
-                    else -> {
-                        if (it.value == null) {
-                            println("  ${it.key}: null,")
-                        } else {
-                            println("  ${it.key}: Any,")
-                        }
+        context.variables.map {
+            when (it.value) {
+                is Int -> {
+                    val variable = it.value as Int
+                    "${it.key}: $variable"
+                }
+
+                is String -> {
+                    val variable = it.value as String
+                    "${it.key}: \"$variable\""
+                }
+
+                is Boolean -> {
+                    val variable = it.value as Boolean
+                    "${it.key}: $variable"
+                }
+
+                is Expression.Function -> {
+                    val variable = it.value as Expression.Function
+                    "${it.key}: $variable"
+                }
+
+                else -> {
+                    if (it.value == null) {
+                        "${it.key}: null"
+                    } else {
+                        "${it.key}: Any"
                     }
                 }
             }
-            println("}")
+        }.joinToString(prefix = "{\n", separator = ",\n", postfix = ",\n}") {
+            "  $it"
+        }.also {
+            if (!context.isTesting && it.isNotBlank()) {
+                println(it)
+            }
         }
     }
 
@@ -407,8 +414,9 @@ class ExpressionRunner(
         expression: Expression.Let,
         scope: MutableMap<String, Any?>,
     ): Any? {
+        val value = runExpression(expression.value, scope)
         scope[expression.name] = runExpression(expression.value, scope)
-        return null
+        return value
     }
 
     private fun functionExpression(
@@ -427,12 +435,7 @@ class ExpressionRunner(
         context.output.run {
             if (size > context.maxOutputSize.coerceAtLeast(10)) {
                 // Clean the output if it's too big
-                context.output.joinToString(separator = "\n").also {
-                    if (!context.isTesting) {
-                        println(value)
-                    }
-                }
-
+                dumpOutput()
                 clear()
             }
 

@@ -8,11 +8,12 @@ import runner.RunTimeContext
  */
 object ReplManager {
     fun run() {
-        println("Kotlin Rinha Interpreter")
-        println("------------------------")
-        println("  Type '!q' to exit.")
-        println("  Type '!s' to see the variable scope.")
-        println()
+        """
+        Kotlin Rinha Interpreter
+        ------------------------
+          '!q' to exit.
+          '!s' to see the variable scope.
+        """.trimIndent().let(::println)
 
         val runner = ExpressionRunner(
             context = RunTimeContext(),

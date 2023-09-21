@@ -5,7 +5,6 @@ import com.github.h0tk3y.betterParse.parser.ParseException
 import expressions.BinaryOperator
 import expressions.Expression
 import parser.RinhaGrammar
-import platform.posix.FP_NAN
 import platform.posix.NAN
 
 class ExpressionRunner(
@@ -156,11 +155,40 @@ class ExpressionRunner(
         recursiveCall: Int,
     ): Any {
         return when (expression.operator) {
-            BinaryOperator.Add -> mathAddExpression(expression, scope, root, recursiveCall)
-            BinaryOperator.Sub -> mathSubExpression(expression, scope, root, recursiveCall)
-            BinaryOperator.Mul -> mathMulExpression(expression, scope, root, recursiveCall)
-            BinaryOperator.Div -> mathDivExpression(expression, scope, root, recursiveCall)
-            BinaryOperator.Rem -> mathRemExpression(expression, scope, root, recursiveCall)
+            BinaryOperator.Add -> {
+                mathAddExpression(
+                    expression = expression,
+                    scope = scope,
+                    root = root,
+                    recursiveCall = recursiveCall,
+                )
+            }
+            BinaryOperator.Sub -> {
+                mathSubExpression(
+                    expression = expression,
+                    scope = scope,
+                    root = root,
+                    recursiveCall = recursiveCall,
+                )
+            }
+            BinaryOperator.Mul -> mathMulExpression(
+                expression = expression,
+                scope = scope,
+                root = root,
+                recursiveCall = recursiveCall,
+            )
+            BinaryOperator.Div -> mathDivExpression(
+                expression = expression,
+                scope = scope,
+                root = root,
+                recursiveCall = recursiveCall,
+            )
+            BinaryOperator.Rem -> mathRemExpression(
+                expression = expression,
+                scope = scope,
+                root = root,
+                recursiveCall = recursiveCall,
+            )
             BinaryOperator.Eq -> {
                 comparativeExpression(
                     expression = expression,
@@ -177,37 +205,75 @@ class ExpressionRunner(
                     recursiveCall = recursiveCall,
                 ) { left, right -> left != right }
             }
-            BinaryOperator.Or -> logicOrExpression(expression, scope, root, recursiveCall)
-            BinaryOperator.And -> logicAndExpression(expression, scope, root, recursiveCall)
+            BinaryOperator.Or -> {
+                logicOrExpression(
+                    expression = expression,
+                    scope = scope,
+                    root = root,
+                    recursiveCall = recursiveCall,
+                )
+            }
+            BinaryOperator.And -> {
+                logicAndExpression(
+                    expression = expression,
+                    scope = scope,
+                    root = root,
+                    recursiveCall = recursiveCall,
+                )
+            }
             BinaryOperator.Lt -> {
-                val left = runExpression(expression.left, scope, root, recursiveCall)
-                val right = runExpression(expression.right, scope, root, recursiveCall)
-                val asInt = left is Int && right is Int && left < right
-                val asDouble = left is Double && right is Double && left < right
-                asInt || asDouble
+                comparativeMathExpression(
+                    expression = expression,
+                    scope = scope,
+                    root = root,
+                    recursiveCall = recursiveCall,
+                ) { left, right -> left < right }
             }
             BinaryOperator.Lte -> {
-                val left = runExpression(expression.left, scope, root, recursiveCall)
-                val right = runExpression(expression.right, scope, root, recursiveCall)
-                val asInt = left is Int && right is Int && left <= right
-                val asDouble = left is Double && right is Double && left <= right
-                asInt || asDouble
+                comparativeMathExpression(
+                    expression = expression,
+                    scope = scope,
+                    root = root,
+                    recursiveCall = recursiveCall,
+                ) { left, right -> left <= right }
             }
             BinaryOperator.Gt -> {
-                val left = runExpression(expression.left, scope, root, recursiveCall)
-                val right = runExpression(expression.right, scope, root, recursiveCall)
-                val asInt = left is Int && right is Int && left > right
-                val asDouble = left is Double && right is Double && left > right
-                asInt || asDouble
+                comparativeMathExpression(
+                    expression = expression,
+                    scope = scope,
+                    root = root,
+                    recursiveCall = recursiveCall,
+                ) { left, right -> left > right }
             }
             BinaryOperator.Gte -> {
-                val left = runExpression(expression.left, scope, root, recursiveCall)
-                val right = runExpression(expression.right, scope, root, recursiveCall)
-                val asInt = left is Int && right is Int && left >= right
-                val asDouble = left is Double && right is Double && left >= right
-                asInt || asDouble
+                comparativeMathExpression(
+                    expression = expression,
+                    scope = scope,
+                    root = root,
+                    recursiveCall = recursiveCall,
+                ) { left, right -> left >= right }
             }
         }
+    }
+
+    private fun comparativeMathExpression(
+        expression: Expression.Binary,
+        scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
+        block: (left: Int, right: Int) -> Boolean,
+    ): Boolean {
+        val left = runExpression(expression.left, scope, root, recursiveCall) as? Int
+        val right = runExpression(expression.right, scope, root, recursiveCall) as? Int
+
+        if (left == null) {
+            throw RuntimeException("left side of the expression is null")
+        }
+        if (right == null) {
+            throw RuntimeException("right side of the expression is null")
+        }
+
+        return block(left, right)
     }
 
     private fun comparativeExpression(
@@ -253,13 +319,7 @@ class ExpressionRunner(
                 if (right == 0) {
                     NAN
                 } else {
-                    left / right
-                }
-            } else if (left is Double && right is Double) {
-                if (right == 0.0) {
-                    FP_NAN
-                } else {
-                    left / right
+                    (left / right)
                 }
             } else {
                 throw RuntimeException("Invalid Sub binary expression")
@@ -281,8 +341,6 @@ class ExpressionRunner(
             val right = runExpression(expression.right, scope, root, recursiveCall)
             if (left is Int && right is Int) {
                 left * right
-            } else if (left is Double && right is Double) {
-                left * right
             } else {
                 throw RuntimeException("Invalid Sub binary expression")
             }
@@ -300,8 +358,6 @@ class ExpressionRunner(
 
         return if (left is Int && right is Int) {
             left - right
-        } else if (left is Double && right is Double) {
-            left - right
         } else {
             throw RuntimeException("Invalid Sub binary expression")
         }
@@ -317,8 +373,6 @@ class ExpressionRunner(
         val right = runExpression(expression.right, scope, root, recursiveCall)
 
         return if (left is Int && right is Int) {
-            left + right
-        } else if (left is Double && right is Double) {
             left + right
         } else if (left is String || right is String) {
             left.toString() + right.toString()

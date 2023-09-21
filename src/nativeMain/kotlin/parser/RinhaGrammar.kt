@@ -33,13 +33,13 @@ object RinhaGrammar : Grammar<List<Expression>>() {
     private val LBRC by literalToken("{")
     private val RBRC by literalToken("}")
 
-    private val LET by literalToken("let")
+    private val LET by regexToken("let\\b")
 
     private const val RESERVED_FN_PRINT = "print"
     private const val RESERVED_FN_FIRST = "first"
     private const val RESERVED_FN_SECOND = "second"
 
-    private val FUN by literalToken("fn")
+    private val FUN by regexToken("fn\\b")
     private val FUN_ARROW by literalToken("=>")
 
     private val PLUS by literalToken("+")

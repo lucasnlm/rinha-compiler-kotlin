@@ -133,7 +133,11 @@ class ExpressionRunner(
         expression: Expression.Var,
         scope: MutableMap<String, Any?>,
     ): Any? {
-        val value = scope[expression.name] ?: context.variables[expression.name]
+        val value =
+            scope[expression.name] ?:
+            context.variables[expression.name] ?:
+            throw RuntimeException("variable '${expression.name}' is not defined")
+
         return if (value is Lazy<*>) {
             value.value
         } else {
@@ -384,19 +388,19 @@ class ExpressionRunner(
 
     private fun strValueExpression(
         expression: Expression.StrValue,
-    ): Any {
+    ): String {
         return expression.value
     }
 
     private fun intValueExpression(
         expression: Expression.IntValue,
-    ): Any {
+    ): Int {
         return expression.value
     }
 
     private fun boolValueExpression(
         expression: Expression.BoolValue,
-    ): Any {
+    ): Boolean {
         return expression.value
     }
 

@@ -33,10 +33,9 @@ class ExpressionRunnerTest {
     @Test
     fun `test basic math script`() {
         testScript(
-            ast = HardcodedScripts.testMathAst,
             source = HardcodedScripts.testMathSource,
         ) {
-            assertEquals(27, variables.size)
+            assertEquals(26, variables.size)
             assertEquals(30, variables["t_add"])
             assertEquals(-5, variables["t_sub"])
             assertEquals(6, variables["t_mul"])
@@ -52,7 +51,6 @@ class ExpressionRunnerTest {
             assertEquals("ab", variables["t_str_add_1"])
             assertEquals("a1", variables["t_str_add_2"])
             assertEquals("1a", variables["t_str_add_3"])
-            assertEquals("anull", variables["t_str_add_4"])
             assertTrue(variables["t_lt"] as Boolean)
             assertTrue(variables["t_lte"] as Boolean)
             assertFalse(variables["t_lt_false"] as Boolean)

@@ -39,8 +39,10 @@ object FileRunner {
 
             // Create a new Runner to run the expressions
             runCatching {
-                ExpressionRunner()
-                    .runFromSource(fileContent)
+                ExpressionRunner().run {
+                    runFromSource(fileContent)
+                    dumpOutput()
+                }
             }.onFailure {
                 println("e: ${it.message}")
             }

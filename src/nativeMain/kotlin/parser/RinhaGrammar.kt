@@ -187,11 +187,13 @@ object RinhaGrammar : Grammar<List<Expression>>() {
     private val comparisonOperator by EQU or NEQ or LT or GT or LEQ or GEQ
     private val comparisonOrMath: Parser<Expression> by (math * optional(comparisonOperator * math))
         .map { (left, tail) ->
-            tail?.let { (operator, right) -> Expression.Binary(
-                left = left,
-                right = right,
-                operator = signToKind[operator.type]!!
-            ) } ?: left
+            tail?.let { (operator, right) ->
+                Expression.Binary(
+                    left = left,
+                    right = right,
+                    operator = signToKind[operator.type]!!,
+                )
+            } ?: left
         }
 
     /** Handle AND operators. E.g: 1 && 2. */

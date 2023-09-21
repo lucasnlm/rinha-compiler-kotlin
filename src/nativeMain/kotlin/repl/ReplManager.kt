@@ -26,6 +26,9 @@ object ReplManager {
             val input = readlnOrNull()?.trim() ?: break
 
             when {
+                input.isEmpty() -> {
+                    continue
+                }
                 SCOPE_PARAMS.contains(input) -> {
                     runner.printGlobalScope()
                     continue
@@ -38,6 +41,8 @@ object ReplManager {
                     runner.runFromSource(input)
                 }
             }
+
+            runner.dumpOutput()
         }
     }
 

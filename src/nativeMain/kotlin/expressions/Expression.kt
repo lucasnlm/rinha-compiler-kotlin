@@ -5,11 +5,6 @@ package expressions
  */
 sealed class Expression {
     /**
-     * Represents the root expression in the AST.
-     */
-    data object Root : Expression()
-
-    /**
      * Represents a let expression in the AST.
      * @property name The name of the variable.
      * @property value The value of the variable.

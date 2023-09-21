@@ -44,7 +44,7 @@ You can also run the interpreter directly using REPL:
 You can use the following command to see the help:
 
 ```bash
-❯ ./rinhak help
+./rinhak help
 Kotlin Rinha Interpreter
   Usage: rinhak [options] [source file]
   Options:

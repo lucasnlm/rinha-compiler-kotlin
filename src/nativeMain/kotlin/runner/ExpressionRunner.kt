@@ -50,6 +50,8 @@ class ExpressionRunner(
             runExpression(
                 expression = expression,
                 scope = context.variables,
+                root = null,
+                recursiveCall = 0,
             )
         }
     }
@@ -111,21 +113,23 @@ class ExpressionRunner(
     private fun runExpression(
         expression: Expression,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
     ): Any? {
         return when (expression) {
             is Expression.Var -> varExpression(expression, scope)
             is Expression.IntValue -> intValueExpression(expression)
             is Expression.BoolValue -> boolValueExpression(expression)
             is Expression.StrValue -> strValueExpression(expression)
-            is Expression.Let -> letExpression(expression, scope)
-            is Expression.Binary -> binaryExpression(expression, scope)
-            is Expression.If -> ifExpression(expression, scope)
+            is Expression.Let -> letExpression(expression, scope, root, recursiveCall)
+            is Expression.Binary -> binaryExpression(expression, scope, root, recursiveCall)
+            is Expression.If -> ifExpression(expression, scope, root, recursiveCall)
             is Expression.Function -> functionExpression(expression)
-            is Expression.Call -> callExpression(expression, scope)
-            is Expression.TupleValue -> tupleValueExpression(expression, scope)
-            is Expression.First -> firstExpression(expression, scope)
-            is Expression.Second -> secondExpression(expression, scope)
-            is Expression.Print -> printExpression(expression, scope)
+            is Expression.Call -> callExpression(expression, scope, root, recursiveCall)
+            is Expression.TupleValue -> tupleValueExpression(expression, scope, root, recursiveCall)
+            is Expression.First -> firstExpression(expression, scope, root, recursiveCall)
+            is Expression.Second -> secondExpression(expression, scope, root, recursiveCall)
+            is Expression.Print -> printExpression(expression, scope, root, recursiveCall)
         }
     }
 
@@ -148,49 +152,57 @@ class ExpressionRunner(
     private fun binaryExpression(
         expression: Expression.Binary,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
     ): Any {
         return when (expression.operator) {
-            BinaryOperator.Add -> mathAddExpression(expression, scope)
-            BinaryOperator.Sub -> mathSubExpression(expression, scope)
-            BinaryOperator.Mul -> mathMulExpression(expression, scope)
-            BinaryOperator.Div -> mathDivExpression(expression, scope)
-            BinaryOperator.Rem -> mathRemExpression(expression, scope)
+            BinaryOperator.Add -> mathAddExpression(expression, scope, root, recursiveCall)
+            BinaryOperator.Sub -> mathSubExpression(expression, scope, root, recursiveCall)
+            BinaryOperator.Mul -> mathMulExpression(expression, scope, root, recursiveCall)
+            BinaryOperator.Div -> mathDivExpression(expression, scope, root, recursiveCall)
+            BinaryOperator.Rem -> mathRemExpression(expression, scope, root, recursiveCall)
             BinaryOperator.Eq -> {
-                val left = runExpression(expression.left, scope)
-                val right = runExpression(expression.right, scope)
-                left == right
+                comparativeExpression(
+                    expression = expression,
+                    scope = scope,
+                    root = root,
+                    recursiveCall = recursiveCall,
+                ) { left, right -> left == right }
             }
             BinaryOperator.Neq -> {
-                val left = runExpression(expression.left, scope)
-                val right = runExpression(expression.right, scope)
-                left != right
+                comparativeExpression(
+                    expression = expression,
+                    scope = scope,
+                    root = root,
+                    recursiveCall = recursiveCall,
+                ) { left, right -> left != right }
             }
-            BinaryOperator.Or -> logicOrExpression(expression, scope)
-            BinaryOperator.And -> logicAndExpression(expression, scope)
+            BinaryOperator.Or -> logicOrExpression(expression, scope, root, recursiveCall)
+            BinaryOperator.And -> logicAndExpression(expression, scope, root, recursiveCall)
             BinaryOperator.Lt -> {
-                val left = runExpression(expression.left, scope)
-                val right = runExpression(expression.right, scope)
+                val left = runExpression(expression.left, scope, root, recursiveCall)
+                val right = runExpression(expression.right, scope, root, recursiveCall)
                 val asInt = left is Int && right is Int && left < right
                 val asDouble = left is Double && right is Double && left < right
                 asInt || asDouble
             }
             BinaryOperator.Lte -> {
-                val left = runExpression(expression.left, scope)
-                val right = runExpression(expression.right, scope)
+                val left = runExpression(expression.left, scope, root, recursiveCall)
+                val right = runExpression(expression.right, scope, root, recursiveCall)
                 val asInt = left is Int && right is Int && left <= right
                 val asDouble = left is Double && right is Double && left <= right
                 asInt || asDouble
             }
             BinaryOperator.Gt -> {
-                val left = runExpression(expression.left, scope)
-                val right = runExpression(expression.right, scope)
+                val left = runExpression(expression.left, scope, root, recursiveCall)
+                val right = runExpression(expression.right, scope, root, recursiveCall)
                 val asInt = left is Int && right is Int && left > right
                 val asDouble = left is Double && right is Double && left > right
                 asInt || asDouble
             }
             BinaryOperator.Gte -> {
-                val left = runExpression(expression.left, scope)
-                val right = runExpression(expression.right, scope)
+                val left = runExpression(expression.left, scope, root, recursiveCall)
+                val right = runExpression(expression.right, scope, root, recursiveCall)
                 val asInt = left is Int && right is Int && left >= right
                 val asDouble = left is Double && right is Double && left >= right
                 asInt || asDouble
@@ -198,12 +210,26 @@ class ExpressionRunner(
         }
     }
 
+    private fun comparativeExpression(
+        expression: Expression.Binary,
+        scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
+        block: (left: Any?, right: Any?) -> Boolean,
+    ): Boolean {
+        val left = runExpression(expression.left, scope, root, recursiveCall)
+        val right = runExpression(expression.right, scope, root, recursiveCall)
+        return block(left, right)
+    }
+
     private fun mathRemExpression(
         expression: Expression.Binary,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
     ): Any {
-        val left = runExpression(expression.left, scope)
-        val right = runExpression(expression.right, scope)
+        val left = runExpression(expression.left, scope, root, recursiveCall)
+        val right = runExpression(expression.right, scope, root, recursiveCall)
         return if (left is Int && right is Int) {
             left.rem(right)
         } else {
@@ -214,13 +240,15 @@ class ExpressionRunner(
     private fun mathDivExpression(
         expression: Expression.Binary,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
     ): Any {
-        val left = runExpression(expression.left, scope)
+        val left = runExpression(expression.left, scope, root, recursiveCall)
 
         return if (left == 0 || left == 0.0) {
             0
         } else {
-            val right = runExpression(expression.right, scope)
+            val right = runExpression(expression.right, scope, root, recursiveCall)
             if (left is Int && right is Int) {
                 if (right == 0) {
                     NAN
@@ -242,13 +270,15 @@ class ExpressionRunner(
     private fun mathMulExpression(
         expression: Expression.Binary,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
     ): Any {
-        val left = runExpression(expression.left, scope)
+        val left = runExpression(expression.left, scope, root, recursiveCall)
 
         return if (left == 0 || left == 0.0) {
             0
         } else {
-            val right = runExpression(expression.right, scope)
+            val right = runExpression(expression.right, scope, root, recursiveCall)
             if (left is Int && right is Int) {
                 left * right
             } else if (left is Double && right is Double) {
@@ -262,9 +292,11 @@ class ExpressionRunner(
     private fun mathSubExpression(
         expression: Expression.Binary,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
     ): Any {
-        val left = runExpression(expression.left, scope)
-        val right = runExpression(expression.right, scope)
+        val left = runExpression(expression.left, scope, root, recursiveCall)
+        val right = runExpression(expression.right, scope, root, recursiveCall)
 
         return if (left is Int && right is Int) {
             left - right
@@ -278,9 +310,11 @@ class ExpressionRunner(
     private fun mathAddExpression(
         expression: Expression.Binary,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
     ): Any {
-        val left = runExpression(expression.left, scope)
-        val right = runExpression(expression.right, scope)
+        val left = runExpression(expression.left, scope, root, recursiveCall)
+        val right = runExpression(expression.right, scope, root, recursiveCall)
 
         return if (left is Int && right is Int) {
             left + right
@@ -298,43 +332,49 @@ class ExpressionRunner(
     private fun logicOrExpression(
         expression: Expression.Binary,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
     ): Boolean {
-        val left = runExpression(expression.left, scope)
+        val left = runExpression(expression.left, scope, root, recursiveCall)
         val leftPart = ((left is Boolean && left) || (left is Int && left != 0))
         if (leftPart) {
             return true
         }
 
-        val right = runExpression(expression.right, scope)
+        val right = runExpression(expression.right, scope, root, recursiveCall)
         return ((right is Boolean && right) || (right is Int && right != 0))
     }
 
     private fun logicAndExpression(
         expression: Expression.Binary,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
     ): Boolean {
-        val left = runExpression(expression.left, scope)
+        val left = runExpression(expression.left, scope, root, recursiveCall)
         val leftPart = ((left is Boolean && left) || (left is Int && left != 0))
         if (!leftPart) {
             return false
         }
 
-        val right = runExpression(expression.right, scope)
+        val right = runExpression(expression.right, scope, root, recursiveCall)
         return ((right is Boolean && right) || (right is Int && right != 0))
     }
 
     private fun firstExpression(
         expression: Expression.First,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
     ): Any? {
         return if (expression.value.size > 1) {
             throw RuntimeException("'first' function can only one argument")
         } else {
             val value = expression.value.first()
             if (value is Expression.TupleValue) {
-                runExpression(value.first, scope)
+                runExpression(value.first, scope, root, recursiveCall)
             } else {
-                when (val valueExpr = runExpression(value, scope)) {
+                when (val valueExpr = runExpression(value, scope, root, recursiveCall)) {
                     is Pair<*, *> -> valueExpr.first
                     else -> throw RuntimeException("'first' function can only handle Tuples")
                 }
@@ -345,15 +385,17 @@ class ExpressionRunner(
     private fun secondExpression(
         expression: Expression.Second,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
     ): Any? {
         return if (expression.value.size > 1) {
             throw RuntimeException("'second' function can only one argument")
         } else {
             val value = expression.value.first()
             if (value is Expression.TupleValue) {
-                runExpression(value.second, scope)
+                runExpression(value.second, scope, root, recursiveCall)
             } else {
-                when (val valueExpr = runExpression(value, scope)) {
+                when (val valueExpr = runExpression(value, scope, root, recursiveCall)) {
                     is Pair<*, *> -> valueExpr.second
                     else -> throw RuntimeException("'second' function can only handle Tuples")
                 }
@@ -364,16 +406,22 @@ class ExpressionRunner(
     private fun ifExpression(
         expression: Expression.If,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
     ): Any? {
         val condition = runExpression(
             expression = expression.condition,
             scope = scope,
+            root = root,
+            recursiveCall = recursiveCall,
         )
         return if (condition == true) {
             expression.then.fold<Expression, Any?>(null) { _, functionExpression ->
                 runExpression(
                     expression = functionExpression,
                     scope = scope,
+                    root = root,
+                    recursiveCall = recursiveCall,
                 )
             }
         } else {
@@ -381,6 +429,8 @@ class ExpressionRunner(
                 runExpression(
                     expression = functionExpression,
                     scope = scope,
+                    root = root,
+                    recursiveCall = recursiveCall,
                 )
             }
         }
@@ -407,17 +457,26 @@ class ExpressionRunner(
     private fun tupleValueExpression(
         expression: Expression.TupleValue,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
     ): Any {
-        val first = runExpression(expression.first, scope)
-        val second = runExpression(expression.second, scope)
+        val first = runExpression(expression.first, scope, root, recursiveCall)
+        val second = runExpression(expression.second, scope, root, recursiveCall)
         return first to second
     }
 
     private fun letExpression(
         expression: Expression.Let,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
     ): Any? {
-        val value = runExpression(expression.value, scope)
+        val value = runExpression(
+            expression = expression.value,
+            scope = scope,
+            root = root,
+            recursiveCall = recursiveCall,
+        )
         val sanitizedName = expression.name.replace("_", "")
         if (sanitizedName.isNotBlank()) {
             if (RESERVED_WORDS.contains(sanitizedName)) {
@@ -438,9 +497,16 @@ class ExpressionRunner(
     private fun printExpression(
         expression: Expression.Print,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int,
     ): Any? {
         val result = if (expression.value.size == 1) {
-            runExpression(expression.value.first(), scope).also {
+            runExpression(
+                expression = expression.value.first(),
+                scope = scope,
+                root = root,
+                recursiveCall = recursiveCall,
+            ).also {
                 val asString = it.toString()
                 context.output.add(asString)
                 println(asString)
@@ -462,6 +528,8 @@ class ExpressionRunner(
     private fun callExpression(
         expression: Expression.Call,
         scope: MutableMap<String, Any?>,
+        root: String?,
+        recursiveCall: Int = 0,
     ): Any? {
         val targetWrapped = context.variables[expression.callee.name]
         val target = if (targetWrapped is Lazy<*>) {
@@ -487,11 +555,27 @@ class ExpressionRunner(
                     null
                 }
 
+                val newRecursiveCall = if (root == expression.callee.name) {
+                    // Recursive call detected
+                    recursiveCall + 1
+                } else {
+                    1
+                }
+
+                if (recursiveCall > 900) {
+                    throw RuntimeException("recursive call limit exceeded")
+                }
+
                 if (result != null) {
-                    return result
+                    result
                 } else {
                     val newScope = target.parameters.mapIndexed { index: Int, param: String ->
-                        param to runExpression(expression.arguments[index], scope)
+                        param to runExpression(
+                            expression = expression.arguments[index],
+                            scope = scope,
+                            root = expression.callee.name,
+                            recursiveCall = newRecursiveCall,
+                        )
                     }.associate {
                         it.first to it.second
                     }.toMutableMap()
@@ -502,6 +586,8 @@ class ExpressionRunner(
                             runExpression(
                                 expression = functionExpression,
                                 scope = newScope,
+                                root = expression.callee.name,
+                                recursiveCall = newRecursiveCall,
                             )
                         }
                 }

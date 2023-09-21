@@ -15,8 +15,10 @@ class RinhaExamplesTest {
         val result = RinhaGrammar.parseToEnd(input)
         val expected = listOf(
             Expression.Print(
-                value = Expression.StrValue(
-                    value = "Hello world",
+                value = listOf(
+                    Expression.StrValue(
+                        value = "Hello world",
+                    ),
                 ),
             ),
         )
@@ -88,13 +90,15 @@ class RinhaExamplesTest {
                 ),
             ),
             Expression.Print(
-                value = Expression.Call(
-                    callee = Expression.Var(
-                        name = "sum",
-                    ),
-                    arguments = listOf(
-                        Expression.IntValue(
-                            value = 5,
+                value = listOf(
+                    Expression.Call(
+                        callee = Expression.Var(
+                            name = "sum",
+                        ),
+                        arguments = listOf(
+                            Expression.IntValue(
+                                value = 5,
+                            ),
                         ),
                     ),
                 ),

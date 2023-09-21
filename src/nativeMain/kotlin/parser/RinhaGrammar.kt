@@ -34,9 +34,10 @@ object RinhaGrammar : Grammar<List<Expression>>() {
     private val RBRC by literalToken("}")
 
     private val LET by literalToken("let")
-    private val FIRST by literalToken("first")
-    private val SECOND by literalToken("second")
-    private val PRINT by literalToken("print")
+
+    private const val RESERVED_FN_PRINT = "print"
+    private const val RESERVED_FN_FIRST = "first"
+    private const val RESERVED_FN_SECOND = "second"
 
     private val FUN by literalToken("fn")
     private val FUN_ARROW by literalToken("=>")
@@ -107,12 +108,25 @@ object RinhaGrammar : Grammar<List<Expression>>() {
             (FALSE asJust Expression.BoolValue(value = false))
 
     /** Handle function calls. E.g: foo(), bar(1, 2). */
-    private val funCall: Parser<Expression.Call> by
-        (ID * -LPAR * separatedTerms(parser(this::expr), COMMA, acceptZero = true) * -RPAR).map { (name, args) ->
-            Expression.Call(
-                callee = Expression.Var(name.text),
-                arguments = args,
-            )
+    private val funCall: Parser<Expression> by
+        (ID * -LPAR * separatedTerms(parser { statement }, COMMA, acceptZero = true) * -RPAR).map { (name, args) ->
+            when (name.text) {
+                RESERVED_FN_PRINT -> {
+                    Expression.Print(value = args)
+                }
+                RESERVED_FN_FIRST -> {
+                    Expression.First(value = args)
+                }
+                RESERVED_FN_SECOND -> {
+                    Expression.Second(value = args)
+                }
+                else -> {
+                    Expression.Call(
+                        callee = Expression.Var(name.text),
+                        arguments = args,
+                    )
+                }
+            }
         }
 
     /** Handle variables. E.g: foo, bar. Or any other name not reserved. */
@@ -125,20 +139,8 @@ object RinhaGrammar : Grammar<List<Expression>>() {
 
     /** Handle tuple literals. E.g: (1, 2), (foo, bar). */
     private val tupleLiteral: Parser<Expression.TupleValue> by
-        (-LPAR * parser(this::expr) * -COMMA * parser(this::expr) * -RPAR).map { (first, second) ->
+        (-LPAR * parser { statement } * -COMMA * parser { statement } * -RPAR).map { (first, second) ->
             Expression.TupleValue(first = first, second = second)
-        }
-
-    /** Handle first statements (used by tuples). E.g: first((1,2)), first(foo). */
-    private val firstStatement: Parser<Expression.First> by
-        (-FIRST * -LPAR * parser { statement } * -RPAR).map {
-            Expression.First(value = it)
-        }
-
-    /** Handle second statements (used by tuples). E.g: second((1,2)), second(foo). */
-    private val secondStatement: Parser<Expression.Second> by
-        (-SECOND * -LPAR * parser { statement } * -RPAR).map {
-            Expression.Second(value = it)
         }
 
     /** Handle parenthesized terms. E.g: (1), (foo). */
@@ -149,7 +151,7 @@ object RinhaGrammar : Grammar<List<Expression>>() {
      * This is helper to join all the terms together.
      **/
     private val nonIndexedTerm: Parser<Expression> by
-        const or funCall or variable or parenTerm or stringLiteral or tupleLiteral or firstStatement or secondStatement
+        const or funCall or variable or parenTerm or stringLiteral or tupleLiteral
 
     /** In my case I can simplify term = nonIndexedTerm. */
     private val term = nonIndexedTerm
@@ -267,23 +269,11 @@ object RinhaGrammar : Grammar<List<Expression>>() {
         }
 
     /**
-     * Handle print statements.
-     * E.g: print("hello"), print(foo), print((1, 2)), print(first(bar)).
-     */
-    private val printStatement: Parser<Expression.Print> by
-        (-PRINT * -LPAR * expr * -RPAR).map {
-            Expression.Print(value = it)
-        }
-
-    /**
      * Join all the valid statements together.
      */
     private val statement: Parser<Expression> by
         functionDefinitionStatement or
             assignmentStatement or
-            firstStatement or
-            secondStatement or
-            printStatement or
             ifStatement or
             expr
 

@@ -119,4 +119,21 @@ object HardcodedScripts {
 
         print(combination(10, 2))
     """.trimIndent()
+
+    const val printReturnSouce1 = """
+        let _ = print(1); print(2)
+    """
+
+    const val printReturnSouce2 = """
+        let f = fn (n1, n2, n3) => { n1 };
+        f(print(1), print(2), print(3))
+    """
+
+    const val printReturnSouce3 = """
+        print(print(1) + print(2))
+    """
+
+    const val printReturnSouce4 = """
+        let tuple = (print(1), print(2)); print(tuple)
+    """
 }

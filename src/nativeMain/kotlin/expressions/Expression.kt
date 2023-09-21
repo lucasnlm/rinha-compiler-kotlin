@@ -103,7 +103,7 @@ sealed class Expression {
      * @property value The value of the first expression in a tuple.
      */
     data class First(
-        val value: Expression,
+        val value: List<Expression>,
     ) : Expression()
 
     /**
@@ -111,7 +111,7 @@ sealed class Expression {
      * @property value The value of the second expression in a tuple.
      */
     data class Second(
-        val value: Expression,
+        val value: List<Expression>,
     ) : Expression()
 
     /**
@@ -128,6 +128,6 @@ sealed class Expression {
      * Represents a print expression in the AST.
      */
     data class Print(
-        val value: Expression,
+        val value: List<Expression>,
     ) : Expression()
 }

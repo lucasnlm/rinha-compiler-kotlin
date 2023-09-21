@@ -7,7 +7,6 @@ import expressions.Expression
 import parser.RinhaGrammar
 import platform.posix.FP_NAN
 import platform.posix.NAN
-import kotlin.time.measureTime
 
 class ExpressionRunner(
     val context: RunTimeContext = RunTimeContext(),
@@ -60,20 +59,6 @@ class ExpressionRunner(
      */
     fun clearOutput() {
         context.output.clear()
-    }
-
-    /**
-     * Dump the output.
-     */
-    fun dumpOutput() {
-        context.output.run {
-            joinToString(separator = "\n").also {
-                if (!context.isTesting && it.isNotBlank()) {
-                    println(it)
-                }
-            }
-            clear()
-        }
     }
 
     /**
@@ -334,12 +319,17 @@ class ExpressionRunner(
         expression: Expression.First,
         scope: MutableMap<String, Any?>,
     ): Any? {
-        return if (expression.value is Expression.TupleValue) {
-            runExpression(expression.value.first, scope)
+        return if (expression.value.size > 1) {
+            throw RuntimeException("'first' function can only one argument")
         } else {
-            when (val value = runExpression(expression.value, scope)) {
-                is Pair<*, *> -> value.first
-                else -> throw RuntimeException("Invalid First expression")
+            val value = expression.value.first()
+            if (value is Expression.TupleValue) {
+                runExpression(value.first, scope)
+            } else {
+                when (val valueExpr = runExpression(value, scope)) {
+                    is Pair<*, *> -> valueExpr.first
+                    else -> throw RuntimeException("'first' function can only handle Tuples")
+                }
             }
         }
     }
@@ -348,12 +338,17 @@ class ExpressionRunner(
         expression: Expression.Second,
         scope: MutableMap<String, Any?>,
     ): Any? {
-        return if (expression.value is Expression.TupleValue) {
-            runExpression(expression.value.second, scope)
+        return if (expression.value.size > 1) {
+            throw RuntimeException("'second' function can only one argument")
         } else {
-            when (val value = runExpression(expression.value, scope)) {
-                is Pair<*, *> -> value.second
-                else -> throw RuntimeException("Invalid First expression")
+            val value = expression.value.first()
+            if (value is Expression.TupleValue) {
+                runExpression(value.second, scope)
+            } else {
+                when (val valueExpr = runExpression(value, scope)) {
+                    is Pair<*, *> -> valueExpr.second
+                    else -> throw RuntimeException("'second' function can only handle Tuples")
+                }
             }
         }
     }
@@ -417,7 +412,7 @@ class ExpressionRunner(
         val value = runExpression(expression.value, scope)
         val sanitizedName = expression.name.replace("_", "")
         if (sanitizedName.isNotBlank()) {
-            scope[expression.name] = runExpression(expression.value, scope)
+            scope[expression.name] = value
         }
         return value
     }
@@ -433,19 +428,24 @@ class ExpressionRunner(
         expression: Expression.Print,
         scope: MutableMap<String, Any?>,
     ): Any? {
-        val value = runExpression(expression.value, scope)
+        val result = if (expression.value.size == 1) {
+            runExpression(expression.value.first(), scope).also {
+                val asString = it.toString()
+                context.output.add(asString)
+                println(asString)
+            }
+        } else {
+            throw RuntimeException("'print' function can handle only one argument")
+        }
 
         context.output.run {
             if (size > context.maxOutputSize.coerceAtLeast(10)) {
                 // Clean the output if it's too big
-                dumpOutput()
                 clear()
             }
-
-            add(value.toString())
         }
 
-        return value
+        return result
     }
 
     private fun callExpression(

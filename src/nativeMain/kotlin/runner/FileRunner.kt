@@ -41,7 +41,6 @@ object FileRunner {
             runCatching {
                 ExpressionRunner().run {
                     runFromSource(fileContent)
-                    dumpOutput()
                 }
             }.onFailure {
                 println("e: ${it.message}")

@@ -142,16 +142,17 @@ class RinhaGrammarTest {
         mapOf(
             "(10, 20)" to Expression.TupleValue(Expression.IntValue(10), Expression.IntValue(20)),
             "first((1,2))" to Expression.First(
-                Expression.TupleValue(Expression.IntValue(1), Expression.IntValue(2)),
+                listOf(Expression.TupleValue(Expression.IntValue(1), Expression.IntValue(2)))
             ),
             "first(someVar)" to Expression.First(
-                Expression.Var("someVar"),
+                listOf(Expression.Var("someVar"))
+
             ),
             "second((1,2))" to Expression.Second(
-                Expression.TupleValue(Expression.IntValue(1), Expression.IntValue(2)),
+                listOf(Expression.TupleValue(Expression.IntValue(1), Expression.IntValue(2)))
             ),
             "second(someVar)" to Expression.Second(
-                Expression.Var("someVar"),
+                listOf(Expression.Var("someVar"))
             ),
             "(10, false)" to Expression.TupleValue(Expression.IntValue(10), Expression.BoolValue(false)),
             "(false, true)" to Expression.TupleValue(Expression.BoolValue(false), Expression.BoolValue(true)),
@@ -268,18 +269,18 @@ class RinhaGrammarTest {
     @Test
     fun `test print parsing`() {
         mapOf(
-            "print(1)" to Expression.Print(Expression.IntValue(1)),
-            "print(\"value\")" to Expression.Print(Expression.StrValue("value")),
-            "print(true)" to Expression.Print(Expression.BoolValue(true)),
-            "print(false)" to Expression.Print(Expression.BoolValue(false)),
-            "print((10, 20))" to Expression.Print(Expression.TupleValue(Expression.IntValue(10), Expression.IntValue(20))),
-            "print((10, false))" to Expression.Print(Expression.TupleValue(Expression.IntValue(10), Expression.BoolValue(false))),
-            "print((false, true))" to Expression.Print(Expression.TupleValue(Expression.BoolValue(false), Expression.BoolValue(true))),
-            "print((\"B\", \"A\"))" to Expression.Print(Expression.TupleValue(Expression.StrValue("B"), Expression.StrValue("A"))),
-            "print((\"B\", 10))" to Expression.Print(Expression.TupleValue(Expression.StrValue("B"), Expression.IntValue(10))),
-            "print((10, \"B\"))" to Expression.Print(Expression.TupleValue(Expression.IntValue(10), Expression.StrValue("B"))),
-            "print((10, (20, 30)))" to Expression.Print(Expression.TupleValue(Expression.IntValue(10), Expression.TupleValue(Expression.IntValue(20), Expression.IntValue(30)))),
-            "print(\"value is\" + 10)" to Expression.Print(Expression.Binary(Expression.StrValue("value is"), Expression.IntValue(10), BinaryOperator.Add)),
+            "print(1)" to Expression.Print(listOf(Expression.IntValue(1))),
+            "print(\"value\")" to Expression.Print(listOf(Expression.StrValue("value"))),
+            "print(true)" to Expression.Print(listOf(Expression.BoolValue(true))),
+            "print(false)" to Expression.Print(listOf(Expression.BoolValue(false))),
+            "print((10, 20))" to Expression.Print(listOf(Expression.TupleValue(Expression.IntValue(10), Expression.IntValue(20)))),
+            "print((10, false))" to Expression.Print(listOf(Expression.TupleValue(Expression.IntValue(10), Expression.BoolValue(false)))),
+            "print((false, true))" to Expression.Print(listOf(Expression.TupleValue(Expression.BoolValue(false), Expression.BoolValue(true)))),
+            "print((\"B\", \"A\"))" to Expression.Print(listOf(Expression.TupleValue(Expression.StrValue("B"), Expression.StrValue("A")))),
+            "print((\"B\", 10))" to Expression.Print(listOf(Expression.TupleValue(Expression.StrValue("B"), Expression.IntValue(10)))),
+            "print((10, \"B\"))" to Expression.Print(listOf(Expression.TupleValue(Expression.IntValue(10), Expression.StrValue("B")))),
+            "print((10, (20, 30)))" to Expression.Print(listOf(Expression.TupleValue(Expression.IntValue(10), Expression.TupleValue(Expression.IntValue(20), Expression.IntValue(30))))),
+            "print(\"value is\" + 10)" to Expression.Print(listOf(Expression.Binary(Expression.StrValue("value is"), Expression.IntValue(10), BinaryOperator.Add))),
         ).forEach {
             val result = RinhaGrammar.parseToEnd(it.key).firstOrNull()
             assertEquals(it.value, result)

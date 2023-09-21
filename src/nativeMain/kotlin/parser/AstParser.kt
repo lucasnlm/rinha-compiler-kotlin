@@ -128,7 +128,7 @@ object AstParser {
             ?: throw AstParseException("Invalid value at First", tryGetLocation())
 
         return Expression.First(
-            value = value,
+            value = listOf(value),
         )
     }
 
@@ -137,7 +137,7 @@ object AstParser {
             ?: throw AstParseException("Invalid value at Second", tryGetLocation())
 
         return Expression.Second(
-            value = value,
+            value = listOf(value),
         )
     }
 
@@ -164,7 +164,7 @@ object AstParser {
             ?: throw AstParseException("Invalid value at Print", tryGetLocation())
 
         return Expression.Print(
-            value = value,
+            value = listOf(value),
         )
     }
 

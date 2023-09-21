@@ -42,7 +42,6 @@ object ReplManager {
                     runCatching {
                         ExpressionRunner().run {
                             runFromSource(input)
-                            dumpOutput()
                         }
                     }.onFailure {
                         println("e: ${it.message}")

@@ -9,6 +9,7 @@ import platform.posix.NAN
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -139,12 +140,73 @@ class ExpressionRunnerTest {
         }
     }
 
-    private fun testScript(ast: String, source: String, block: RunTimeContext.() -> Unit) {
-        testScriptFromAst(ast) {
-            block(this)
+    @Test
+    fun `test print returns - with let`() {
+        testScript(
+            source = HardcodedScripts.printReturnSouce1,
+        ) {
+            assertNull(variables["_"])
+            assertTrue(variables.isEmpty())
+            assertEquals(2, output.size)
+            assertEquals("1", output[0])
+            assertEquals("2", output[1])
         }
-        testScriptFromSource(source) {
-            block(this)
+    }
+
+    @Test
+    fun `test print returns - with fn`() {
+        testScript(
+            source = HardcodedScripts.printReturnSouce2,
+        ) {
+            assertNotNull(variables["f"])
+            assertEquals(3, output.size)
+            assertEquals("1", output[0])
+            assertEquals("2", output[1])
+            assertEquals("3", output[2])
+        }
+    }
+
+    @Test
+    fun `test print returns - print of prints`() {
+        testScript(
+            source = HardcodedScripts.printReturnSouce3,
+        ) {
+            assertTrue(variables.isEmpty())
+            assertEquals(3, output.size)
+            assertEquals("1", output[0])
+            assertEquals("2", output[1])
+            assertEquals("3", output[2])
+        }
+    }
+
+    @Test
+    fun `test print returns - tuple`() {
+        testScript(
+            source = HardcodedScripts.printReturnSouce4,
+        ) {
+            assertNotNull(variables["tuple"])
+            assertEquals(3, output.size)
+            assertEquals("1", output[0])
+            assertEquals("2", output[1])
+            assertEquals("(1, 2)", output[2])
+        }
+    }
+
+    private fun testScript(
+        ast: String? = null,
+        source: String? = null,
+        block: RunTimeContext.() -> Unit,
+    ) {
+        ast?.let {
+            testScriptFromAst(ast) {
+                block(this)
+            }
+        }
+
+        source?.let {
+            testScriptFromSource(source) {
+                block(this)
+            }
         }
     }
 

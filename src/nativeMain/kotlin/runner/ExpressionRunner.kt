@@ -21,7 +21,7 @@ class ExpressionRunner(
             RinhaGrammar.parseToEnd(source)
         }.onFailure {
             if (it is ParseException) {
-                println("e: Syntax error")
+                println("e: syntax error")
             } else {
                 println("e: ${it.message}")
             }
@@ -65,41 +65,45 @@ class ExpressionRunner(
      * Print the global scope.
      */
     fun printGlobalScope() {
-        context.variables.map {
-            when (it.value) {
-                is Int -> {
-                    val variable = it.value as Int
-                    "${it.key}: $variable"
-                }
+        if (context.variables.isEmpty()) {
+            println("{}")
+        } else {
+            context.variables.map {
+                when (it.value) {
+                    is Int -> {
+                        val variable = it.value as Int
+                        "${it.key}: $variable"
+                    }
 
-                is String -> {
-                    val variable = it.value as String
-                    "${it.key}: \"$variable\""
-                }
+                    is String -> {
+                        val variable = it.value as String
+                        "${it.key}: \"$variable\""
+                    }
 
-                is Boolean -> {
-                    val variable = it.value as Boolean
-                    "${it.key}: $variable"
-                }
+                    is Boolean -> {
+                        val variable = it.value as Boolean
+                        "${it.key}: $variable"
+                    }
 
-                is Expression.Function -> {
-                    val variable = it.value as Expression.Function
-                    "${it.key}: $variable"
-                }
+                    is Expression.Function -> {
+                        val variable = it.value as Expression.Function
+                        "${it.key}: $variable"
+                    }
 
-                else -> {
-                    if (it.value == null) {
-                        "${it.key}: null"
-                    } else {
-                        "${it.key}: Any"
+                    else -> {
+                        if (it.value == null) {
+                            "${it.key}: null"
+                        } else {
+                            "${it.key}: Any"
+                        }
                     }
                 }
-            }
-        }.joinToString(prefix = "{\n", separator = ",\n", postfix = ",\n}") {
-            "  $it"
-        }.also {
-            if (!context.isTesting && it.isNotBlank()) {
-                println(it)
+            }.joinToString(prefix = "{\n", separator = ",\n", postfix = ",\n}") {
+                "  $it"
+            }.also {
+                if (!context.isTesting && it.isNotBlank()) {
+                    println(it)
+                }
             }
         }
     }
@@ -412,6 +416,9 @@ class ExpressionRunner(
         val value = runExpression(expression.value, scope)
         val sanitizedName = expression.name.replace("_", "")
         if (sanitizedName.isNotBlank()) {
+            if (RESERVED_WORDS.contains(sanitizedName)) {
+                throw RuntimeException("can't use reserved word '$sanitizedName' as variable name")
+            }
             scope[expression.name] = value
         }
         return value
@@ -461,13 +468,13 @@ class ExpressionRunner(
 
         return when (target) {
             null -> {
-                throw RuntimeException("Function '${expression.callee.name}' is not defined")
+                throw RuntimeException("function '${expression.callee.name}' is not defined")
             }
             !is Expression.Function -> {
-                throw RuntimeException("'${expression.callee.name}' is not valid function")
+                throw RuntimeException("'${expression.callee.name}' is not a function")
             }
             (target.parameters.size != expression.arguments.size) -> {
-                throw RuntimeException("Missing param at '${expression.callee.name}' call")
+                throw RuntimeException("missing param at '${expression.callee.name}' call")
             }
             else -> {
                 val result: Any? = if (context.runtimeOptimization) {
@@ -496,5 +503,9 @@ class ExpressionRunner(
                 }
             }
         }
+    }
+
+    companion object {
+        private val RESERVED_WORDS = listOf("print", "let", "if", "else", "true", "false", "first", "second")
     }
 }

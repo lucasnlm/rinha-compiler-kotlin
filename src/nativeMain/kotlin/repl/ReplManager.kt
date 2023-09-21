@@ -40,7 +40,7 @@ object ReplManager {
                 }
                 else -> {
                     runCatching {
-                        ExpressionRunner().run {
+                        runner.run {
                             runFromSource(input)
                         }
                     }.onFailure {

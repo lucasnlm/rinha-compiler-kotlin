@@ -39,11 +39,16 @@ object ReplManager {
                     break
                 }
                 else -> {
-                    runner.runFromSource(input)
+                    runCatching {
+                        ExpressionRunner().run {
+                            runFromSource(input)
+                            dumpOutput()
+                        }
+                    }.onFailure {
+                        println("e: ${it.message}")
+                    }
                 }
             }
-
-            runner.dumpOutput()
         }
     }
 

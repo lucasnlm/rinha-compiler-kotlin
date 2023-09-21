@@ -415,7 +415,10 @@ class ExpressionRunner(
         scope: MutableMap<String, Any?>,
     ): Any? {
         val value = runExpression(expression.value, scope)
-        scope[expression.name] = runExpression(expression.value, scope)
+        val sanitizedName = expression.name.replace("_", "")
+        if (sanitizedName.isNotBlank()) {
+            scope[expression.name] = runExpression(expression.value, scope)
+        }
         return value
     }
 

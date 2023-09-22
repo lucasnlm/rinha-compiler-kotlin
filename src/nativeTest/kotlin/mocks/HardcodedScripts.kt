@@ -60,11 +60,11 @@ object HardcodedScripts {
     """.trimIndent()
 
     val sumSource = """
-        let sum = fn (n) => {
-          if (n == 1) {
-            n
+        let sum = fn (z) => {
+          if (z == 1) {
+            z
           } else {
-            n + sum(n - 1)
+            z + sum(z - 1)
           }
         };
 

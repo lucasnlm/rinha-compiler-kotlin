@@ -2,7 +2,6 @@ package runner
 
 import io.FileReader
 import parser.AstParser
-import kotlin.time.measureTime
 
 object FileRunner {
     /**

@@ -28,22 +28,4 @@ object FileReader {
             }
         }.getOrNull()
     }
-
-    /**
-     * Write [content] to [filePath].
-     */
-    fun writeFile(
-        filePath: String,
-        content: String,
-        fileSystem: FileSystem = FileSystem.SYSTEM,
-    ) {
-        val path = filePath.toPath(true)
-        runCatching {
-            fileSystem.sink(path).use { sink ->
-                sink.buffer().use { buffer ->
-                    buffer.writeUtf8(content)
-                }
-            }
-        }
-    }
 }

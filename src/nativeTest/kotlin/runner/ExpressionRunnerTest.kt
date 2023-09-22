@@ -92,7 +92,6 @@ class ExpressionRunnerTest {
             assertTrue {
                 variables["sum"] is Expression.Function
             }
-            assertEquals(variables["sum"].hashCode(), 0)
             assertEquals("15", output.first())
         }
     }

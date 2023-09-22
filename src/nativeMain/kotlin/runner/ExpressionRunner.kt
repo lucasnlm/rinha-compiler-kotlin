@@ -42,7 +42,7 @@ class ExpressionRunner(
      */
     fun run(expressions: List<Expression>): Any? {
         if (expressions.isEmpty()) {
-            throw RuntimeException("No expressions to run")
+            throw RuntimeException("no expressions to run")
         }
 
         return expressions.fold<Expression, Any?>(null) { _, expression ->
@@ -299,7 +299,7 @@ class ExpressionRunner(
         return if (left is Int && right is Int) {
             left.rem(right)
         } else {
-            throw RuntimeException("Invalid Sub binary expression")
+            throw RuntimeException("invalid rem expression")
         }
     }
 
@@ -322,7 +322,7 @@ class ExpressionRunner(
                     (left / right)
                 }
             } else {
-                throw RuntimeException("Invalid Sub binary expression")
+                throw RuntimeException("invalid division expression")
             }
         }
     }
@@ -342,7 +342,7 @@ class ExpressionRunner(
             if (left is Int && right is Int) {
                 left * right
             } else {
-                throw RuntimeException("Invalid Sub binary expression")
+                throw RuntimeException("invalid multiplication expression")
             }
         }
     }
@@ -359,7 +359,7 @@ class ExpressionRunner(
         return if (left is Int && right is Int) {
             left - right
         } else {
-            throw RuntimeException("Invalid Sub binary expression")
+            throw RuntimeException("invalid sub expression")
         }
     }
 
@@ -379,7 +379,7 @@ class ExpressionRunner(
         } else if (left is String) {
             left + right.toString()
         } else {
-            throw RuntimeException("Invalid Add binary expression")
+            throw RuntimeException("invalid add expression")
         }
     }
 
@@ -630,9 +630,7 @@ class ExpressionRunner(
                             root = expression.callee.name,
                             recursiveCall = newRecursiveCall,
                         )
-                    }.associate {
-                        it.first to it.second
-                    }.toMutableMap()
+                    }.toMap().toMutableMap()
 
                     target
                         .value

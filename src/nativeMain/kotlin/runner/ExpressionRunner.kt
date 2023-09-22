@@ -123,7 +123,7 @@ class ExpressionRunner(
             is Expression.Let -> letExpression(expression, scope, root, recursiveCall)
             is Expression.Binary -> binaryExpression(expression, scope, root, recursiveCall)
             is Expression.If -> ifExpression(expression, scope, root, recursiveCall)
-            is Expression.Function -> functionExpression(expression)
+            is Expression.Function -> functionExpression(scope, expression)
             is Expression.Call -> callExpression(expression, scope, root, recursiveCall)
             is Expression.TupleValue -> tupleValueExpression(expression, scope, root, recursiveCall)
             is Expression.First -> firstExpression(expression, scope, root, recursiveCall)
@@ -134,7 +134,7 @@ class ExpressionRunner(
 
     private fun varExpression(
         expression: Expression.Var,
-        scope: MutableMap<String, Any?>,
+        scope: Map<String, Any?>,
     ): Any? {
         val value =
             scope[expression.name]
@@ -542,10 +542,11 @@ class ExpressionRunner(
     }
 
     private fun functionExpression(
+        scope: Map<String, Any?>,
         expression: Expression.Function,
     ): Any {
         // Function will be executed only when called.
-        return expression
+        return expression.copy(scopeCopy = scope + context.variables)
     }
 
     private fun printExpression(
@@ -626,16 +627,26 @@ class ExpressionRunner(
                 if (result != null) {
                     result
                 } else {
-                    val newScope = target.parameters.mapIndexed { index: Int, param: String ->
+                    val functionScope = (scope + target.scopeCopy).toMutableMap()
+
+                    val resolvedArguments = target.parameters.mapIndexed { index: Int, param: String ->
                         param to runExpression(
                             expression = expression.arguments[index],
-                            scope = scope,
+                            scope = functionScope,
                             root = expression.callee.name,
                             recursiveCall = newRecursiveCall,
                         )
-                    }.toMap().toMutableMap()
+                    }
 
-                    target
+                    val newScope = target.scopeCopy.toMutableMap().apply { putAll(resolvedArguments) }
+
+                    val cached = if (context.cacheEnabled) {
+                        context.functionCache[expression.callee.name]?.get(newScope.toString())
+                    } else {
+                        null
+                    }
+
+                    cached ?: target
                         .value
                         .fold<Expression, Any?>(null) { _, functionExpression ->
                             runExpression(
@@ -644,6 +655,12 @@ class ExpressionRunner(
                                 root = expression.callee.name,
                                 recursiveCall = newRecursiveCall,
                             )
+                        }.also {
+                            if (context.cacheEnabled) {
+                                val cacheMap = context.functionCache[expression.callee.name] ?: mutableMapOf()
+                                cacheMap[newScope.toString()] = it
+                                context.functionCache[expression.callee.name] = cacheMap
+                            }
                         }
                 }
             }

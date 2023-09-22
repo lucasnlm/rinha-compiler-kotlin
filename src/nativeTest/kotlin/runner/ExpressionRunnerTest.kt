@@ -190,6 +190,27 @@ class ExpressionRunnerTest {
         }
     }
 
+    @Test
+    fun `test immutability`() {
+        testScript(
+            source = HardcodedScripts.immutabilitySource,
+        ) {
+            assertEquals(0, output.size)
+            assertEquals(2, variables["x"])
+            assertEquals(1, variables["result1"])
+            assertEquals(2, variables["result2"])
+        }
+    }
+
+    @Test
+    fun `test comments`() {
+        testScript(
+            source = HardcodedScripts.commentsSource,
+        ) {
+
+        }
+    }
+
     private fun testScript(
         ast: String? = null,
         source: String? = null,

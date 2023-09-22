@@ -10,8 +10,10 @@ package runner
  */
 data class RunTimeContext(
     val variables: MutableMap<String, Any?> = mutableMapOf(),
+    val functionCache: MutableMap<String, MutableMap<String, Any?>> = mutableMapOf(),
     val output: MutableList<String> = mutableListOf(),
     val maxOutputSize: Int = 100,
     val isTesting: Boolean = false,
     val runtimeOptimization: Boolean = true,
+    val cacheEnabled: Boolean = true,
 )

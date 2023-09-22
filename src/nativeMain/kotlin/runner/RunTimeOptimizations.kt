@@ -4,6 +4,12 @@ import expressions.BinaryOperator
 import expressions.Expression
 
 object RunTimeOptimizations {
+    /**
+     * Try to find optimizations to functions that can be done at runtime.
+     * Example:
+     * - Detect Fibonacci
+     * - Try to do tail recursion optimization
+     */
     fun checkRunTimeOptimizations(
         exprCall: Expression.Call,
         expressions: List<Expression>,

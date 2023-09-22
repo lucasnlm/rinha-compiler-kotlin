@@ -6,9 +6,9 @@ import expressions.Expression
 object RunTimeOptimizations {
     fun checkRunTimeOptimizations(
         exprCall: Expression.Call,
-        expression: List<Expression>,
+        expressions: List<Expression>,
     ): Any? {
-        return checkFibonacci(exprCall, expression) ?: tailOptSimpleFn(exprCall, expression)
+        return tailOptSimpleFn(exprCall, expressions) ?: checkFibonacci(exprCall, expressions)
     }
 
     private fun tailOptSimpleFn(
@@ -63,30 +63,50 @@ object RunTimeOptimizations {
 
     private fun checkFibonacci(
         exprCall: Expression.Call,
-        expression: List<Expression>,
+        expressions: List<Expression>,
     ): Int? {
-        val testCalleName = exprCall.callee.name.lowercase()
-        if (testCalleName == "fib" || testCalleName.contains("fibonacci")) {
-            val firstExpression = expression.firstOrNull()
-            if (firstExpression is Expression.If) {
-                firstExpression.condition is Expression.Binary &&
-                        firstExpression.then.firstOrNull() is Expression.Var &&
-                        firstExpression.otherwise?.firstOrNull() is Expression.Binary
-            }
+        if (expressions.lastOrNull() is Expression.If && exprCall.arguments.size == 1) {
+            val ifExpr = (expressions.lastOrNull() as Expression.If)
+            if (ifExpr.condition is Expression.Binary) {
+                if (ifExpr.condition.operator == BinaryOperator.Lt &&
+                    ifExpr.condition.left is Expression.Var &&
+                    ifExpr.condition.right is Expression.IntValue &&
+                    ifExpr.condition.right.value == 2) {
+                    if (ifExpr.then.last() is Expression.Var &&
+                        ifExpr.otherwise?.last() is Expression.Binary) {
+                        val elseExpr = (ifExpr.otherwise.last() as Expression.Binary)
+                        val leftIsRecursive = elseExpr.left is Expression.Call && elseExpr.left.callee.name == exprCall.callee.name
+                        val rightIsRecursive = elseExpr.right is Expression.Call && elseExpr.right.callee.name == exprCall.callee.name
+                        val isSumOfRecursion = leftIsRecursive && rightIsRecursive && elseExpr.operator == BinaryOperator.Add
+                        if (isSumOfRecursion) {
+                            val leftCall = (elseExpr.left as Expression.Call).arguments.first() as Expression.Binary
+                            val rightCall =  (elseExpr.right as Expression.Call).arguments.first() as Expression.Binary
+                            val isMinus1 = leftCall.left is Expression.Var &&
+                                    leftCall.right is Expression.IntValue &&
+                                    leftCall.operator == BinaryOperator.Sub &&
+                                    leftCall.right.value == 1
+                            val isMinus2 = rightCall.left is Expression.Var &&
+                                    rightCall.right is Expression.IntValue &&
+                                    rightCall.operator == BinaryOperator.Sub &&
+                                    rightCall.right.value == 2
+                            if (isMinus1 && isMinus2) {
+                                val intParam = exprCall.arguments.firstOrNull() as? Expression.IntValue
+                                intParam?.value?.let {
+                                    var temp1 = 0
+                                    var temp2 = 1
 
-            val intParam = exprCall.arguments.firstOrNull() as? Expression.IntValue
+                                    for (i in 1..it) {
+                                        val sum = temp1 + temp2
+                                        temp1 = temp2
+                                        temp2 = sum
+                                    }
 
-            intParam?.value?.let {
-                var temp1 = 0
-                var temp2 = 1
-
-                for (i in 1..it) {
-                    val sum = temp1 + temp2
-                    temp1 = temp2
-                    temp2 = sum
+                                    return temp1
+                                }
+                            }
+                        }
+                    }
                 }
-
-                return temp1
             }
         }
         return null

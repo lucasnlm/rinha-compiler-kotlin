@@ -606,7 +606,7 @@ class ExpressionRunner(
                 val result: Any? = if (context.runtimeOptimization) {
                     RunTimeOptimizations.checkRunTimeOptimizations(
                         exprCall = expression,
-                        expression = target.value,
+                        expressions = target.value,
                     )
                 } else {
                     null

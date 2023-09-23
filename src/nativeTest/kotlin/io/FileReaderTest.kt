@@ -21,7 +21,7 @@ class FileReaderTest {
             filePath = "/Users/user/test.json",
             fileSystem = fileSystem,
         )
-        assertEquals("{\"too\": 123}", fileContents)
+        assertEquals("{\"too\": 123}", fileContents.getOrNull())
     }
 
     @Test
@@ -30,6 +30,6 @@ class FileReaderTest {
             filePath = "/Users/user/non-existent.json",
             fileSystem = fileSystem,
         )
-        assertNull(fileContents)
+        assertNull(fileContents.getOrNull())
     }
 }

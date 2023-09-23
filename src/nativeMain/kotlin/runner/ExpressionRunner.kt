@@ -1,6 +1,5 @@
 package runner
 
-import com.github.h0tk3y.betterParse.grammar.parseToEnd
 import com.github.h0tk3y.betterParse.parser.ParseException
 import expressions.BinaryOperator
 import expressions.Expression

@@ -1,5 +1,8 @@
 package expressions
 
+/**
+ * Represents a binary operator.
+ */
 enum class BinaryOperator {
     Add, // Add
     Sub, // Subtract

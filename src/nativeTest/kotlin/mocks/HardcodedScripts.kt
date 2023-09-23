@@ -123,7 +123,7 @@ object HardcodedScripts {
           }
         };
         let g = f();
-        let result = g()
+        let result = g();
     """.trimIndent()
 
     val combinationAst = """

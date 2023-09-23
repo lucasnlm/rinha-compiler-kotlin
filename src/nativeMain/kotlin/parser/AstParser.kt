@@ -1,15 +1,12 @@
 package parser
 
-import expressions.AstModel
 import expressions.BinaryOperator
 import expressions.Expression
 import expressions.ExpressionLocation
-import io.FileReader
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import okio.FileSystem
 import parser.Expressions.EXPRESSION_BINARY_ID
 import parser.Expressions.EXPRESSION_BINARY_LEFT
 import parser.Expressions.EXPRESSION_BINARY_OPERATOR
@@ -60,28 +57,17 @@ import parser.JsonObjectExt.value
 object AstParser {
     /**
      * Parses the AST from the given file path Json.
-     * @param filePath The file path to parse.
-     * @param fileSystem The [FileSystem] to use. By default, it is [FileSystem.SYSTEM].
-     * @return The [Result] with a [AstModel] if the parsing was successful.
+     * @param fileContent The file content to parse.
+     * @return The [Result] with the list of [Expression].
      */
-    fun parseAst(
-        filePath: String,
-        fileSystem: FileSystem = FileSystem.SYSTEM,
-    ): Result<AstModel> {
-        val fileContent = FileReader.readFile(filePath, fileSystem)
-            ?: return Result.failure(IllegalArgumentException("Invalid AST file content from '$filePath'"))
-        val parsedAst = JsonParser.parse(fileContent)
-            ?: return Result.failure(IllegalArgumentException("Fail to parse JSON from '$filePath'"))
-        val parsedExpressions = parseExpressions(parsedAst).onFailure {
-            return Result.failure(IllegalArgumentException("Syntax error: $it"))
-        }.getOrNull() ?: return Result.failure(IllegalArgumentException("Fail to parse expressions from '$filePath'"))
+    fun parseAstFile(
+        fileContent: JsonObject,
+    ): Result<List<Expression>> {
+        val parsedExpressions = parseExpressions(fileContent).onFailure {
+            return Result.failure(IllegalArgumentException("syntax error. $it"))
+        }.getOrThrow()
 
-        return Result.success(
-            AstModel(
-                filePath = filePath,
-                expressions = parsedExpressions,
-            ),
-        )
+        return Result.success(parsedExpressions)
     }
 
     /**

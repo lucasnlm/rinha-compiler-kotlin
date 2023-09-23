@@ -1,6 +1,5 @@
 package runner
 
-import com.github.h0tk3y.betterParse.grammar.parseToEnd
 import expressions.Expression
 import mocks.AstHelper
 import mocks.HardcodedScripts
@@ -219,7 +218,7 @@ class ExpressionRunnerTest {
         testScript(
             source = HardcodedScripts.functionScopeSource,
         ) {
-            assertEquals(1, variables["g"])
+            assertEquals(1, variables["result"])
         }
     }
 
@@ -246,7 +245,7 @@ class ExpressionRunnerTest {
         val runner = ExpressionRunner(
             context = RunTimeContext(isTesting = true),
         )
-        runner.run(result.expressions)
+        runner.run(result)
         block(runner.context)
     }
 

@@ -95,6 +95,31 @@ object HardcodedScripts {
         print(fib(10))
     """.trimIndent()
 
+    val customRecursiveSource = """
+        let rec = fn (z) => {
+          let w = 10
+          if (z == 1) {
+            z + w
+          } else {
+            w + z + rec(z - 1)
+          }
+        };
+
+        print (rec(1000))
+    """.trimIndent()
+
+    val fibBreakSource = """
+        let fib = fn (n) => {
+          if (n < 2) {
+            n
+          } else {
+            fib(n - 1) + fib(n - 2)
+          }
+        };
+
+        print(fib(1000))
+    """.trimIndent()
+
     val immutabilitySource = """
         let x = 1;
         let foo = fn () => { x };
@@ -124,6 +149,24 @@ object HardcodedScripts {
         };
         let g = f();
         let result = g();
+    """.trimIndent()
+
+    val fibtailSource = """
+        let fibrec = fn (n, k1, k2) => {
+          if (n == 0) {
+            k1
+          } else {
+            if (n == 1) {
+              k2
+            } else {
+              fibrec(n - 1, k2, k1 + k2)
+            }
+          }
+        };
+        let fib = fn (n) => {
+          fibrec(n, 0, 1)
+        };
+        print(fib(10000000))
     """.trimIndent()
 
     val combinationAst = """

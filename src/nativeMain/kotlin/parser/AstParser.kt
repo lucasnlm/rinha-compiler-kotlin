@@ -74,7 +74,7 @@ object AstParser {
     /**
      * List of parsers for each expression kind.
      */
-    private fun JsonObject.toExpressionOf(kind: String): Expression {
+    fun JsonObject.toExpressionOf(kind: String): Expression {
         return when (kind) {
             EXPRESSION_LET_ID -> parseLetExpression()
             EXPRESSION_TUPLE_ID -> parseTupleExpression()

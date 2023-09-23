@@ -108,7 +108,39 @@ class ExpressionRunnerTest {
     }
 
     @Test
-    fun `test fib script`() {
+    fun `test fib script - runtimeOptimization off`() {
+        testScript(
+            ast = HardcodedScripts.fibAst,
+            source = HardcodedScripts.fibSource,
+            runtimeOptimization = false,
+        ) {
+            assertEquals(1, variables.size)
+            assertEquals(1, output.size)
+            assertTrue {
+                variables["fib"] is Expression.Function
+            }
+            assertEquals("55", output.first())
+        }
+    }
+
+    @Test
+    fun `test fib script break - runtimeOptimization off`() {
+        runCatching {
+            testScript(
+                source = HardcodedScripts.fibBreakSource,
+                runtimeOptimization = false,
+            ) {
+                // It will b
+            }
+        }.onFailure {
+            assertEquals("recursive call limit exceeded", it.message)
+        }.onSuccess {
+            assertFalse(true)
+        }
+    }
+
+    @Test
+    fun `test fib script - runtimeOptimization on`() {
         testScript(
             ast = HardcodedScripts.fibAst,
             source = HardcodedScripts.fibSource,
@@ -118,6 +150,17 @@ class ExpressionRunnerTest {
             assertTrue {
                 variables["fib"] is Expression.Function
             }
+            assertEquals("55", output.first())
+        }
+    }
+
+    @Test
+    fun `test custom recursive script - runtimeOptimization on`() {
+        testScript(
+            source = HardcodedScripts.customRecursiveSource,
+        ) {
+            assertEquals(1, variables.size)
+            assertEquals(1, output.size)
             assertEquals("55", output.first())
         }
     }
@@ -222,9 +265,21 @@ class ExpressionRunnerTest {
         }
     }
 
+    @Test
+    fun `test fibtail source`() {
+        testScript(
+            source = HardcodedScripts.fibtailSource,
+        ) {
+            assertEquals(1, variables["fib"])
+            assertEquals(1, output.size)
+            assertEquals("55", output.first())
+        }
+    }
+
     private fun testScript(
         ast: String? = null,
         source: String? = null,
+        runtimeOptimization: Boolean = true,
         block: RunTimeContext.() -> Unit,
     ) {
         ast?.let {
@@ -234,7 +289,7 @@ class ExpressionRunnerTest {
         }
 
         source?.let {
-            testScriptFromSource(source) {
+            testScriptFromSource(runtimeOptimization, source) {
                 block(this)
             }
         }
@@ -249,10 +304,16 @@ class ExpressionRunnerTest {
         block(runner.context)
     }
 
-    private fun testScriptFromSource(source: String, block: RunTimeContext.() -> Unit) {
+    private fun testScriptFromSource(
+        runtimeOptimization: Boolean = true,
+        source: String, block: RunTimeContext.() -> Unit,
+    ) {
         val result = RinhaGrammar.parseSource(source)
         val runner = ExpressionRunner(
-            context = RunTimeContext(isTesting = true),
+            context = RunTimeContext(
+                isTesting = true,
+                runtimeOptimization = runtimeOptimization,
+            ),
         )
 
         runner.run(result)

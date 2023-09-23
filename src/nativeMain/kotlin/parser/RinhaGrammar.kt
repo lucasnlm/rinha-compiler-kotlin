@@ -11,12 +11,14 @@ import com.github.h0tk3y.betterParse.combinators.times
 import com.github.h0tk3y.betterParse.combinators.unaryMinus
 import com.github.h0tk3y.betterParse.combinators.use
 import com.github.h0tk3y.betterParse.grammar.Grammar
+import com.github.h0tk3y.betterParse.grammar.parseToEnd
 import com.github.h0tk3y.betterParse.grammar.parser
 import com.github.h0tk3y.betterParse.lexer.literalToken
 import com.github.h0tk3y.betterParse.lexer.regexToken
 import com.github.h0tk3y.betterParse.parser.Parser
 import expressions.BinaryOperator
 import expressions.Expression
+import okio.Source
 
 /**
  * Represents the grammar of the Rinha language.
@@ -32,6 +34,9 @@ object RinhaGrammar : Grammar<List<Expression>>() {
 
     private val LBRC by literalToken("{")
     private val RBRC by literalToken("}")
+
+    private val LINE_COMMENT = "//.*".toRegex()
+    private val MULTI_LINE_COMMENT = "/\\*(.|\\n)*?\\*/".toRegex()
 
     private val LET by regexToken("let\\b")
 
@@ -289,4 +294,13 @@ object RinhaGrammar : Grammar<List<Expression>>() {
      * This is the "entry point"
      */
     override val rootParser: Parser<List<Expression>> by oneOrMore(statement)
+
+    /**
+     * Parse a [Source] and return a list of [Expression]s.
+     */
+    fun parseSource(source: String): List<Expression> {
+        return source.replace(MULTI_LINE_COMMENT, "")
+            .replace(LINE_COMMENT, "")
+            .let(::parseToEnd)
+    }
 }

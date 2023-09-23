@@ -207,7 +207,19 @@ class ExpressionRunnerTest {
         testScript(
             source = HardcodedScripts.commentsSource,
         ) {
+            assertEquals(1, variables["x"])
+            assertNull(variables["y"])
+            assertEquals(10, variables["z"])
+            assertEquals(5, variables["w"])
+        }
+    }
 
+    @Test
+    fun `test function scope inside function`() {
+        testScript(
+            source = HardcodedScripts.functionScopeSource,
+        ) {
+            assertEquals(1, variables["g"])
         }
     }
 
@@ -239,7 +251,7 @@ class ExpressionRunnerTest {
     }
 
     private fun testScriptFromSource(source: String, block: RunTimeContext.() -> Unit) {
-        val result = RinhaGrammar.parseToEnd(source)
+        val result = RinhaGrammar.parseSource(source)
         val runner = ExpressionRunner(
             context = RunTimeContext(isTesting = true),
         )

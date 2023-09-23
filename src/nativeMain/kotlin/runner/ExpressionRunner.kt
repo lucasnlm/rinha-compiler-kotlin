@@ -17,7 +17,7 @@ class ExpressionRunner(
      */
     fun runFromSource(source: String): Any? {
         return runCatching {
-            RinhaGrammar.parseToEnd(source)
+            RinhaGrammar.parseSource(source)
         }.onFailure {
             if (it is ParseException) {
                 println("e: syntax error")

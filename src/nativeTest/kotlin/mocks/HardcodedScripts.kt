@@ -108,6 +108,22 @@ object HardcodedScripts {
         let x = 1; // this should be ignored
         /* this should be ignored too */
         // let y = 0
+        let /* this should be ignored */ z = 10
+        /*
+          multi line comment
+          */
+        let w = 5
+    """.trimIndent()
+
+    val functionScopeSource = """
+        let f = fn () => {
+          let x = 1;
+          fn () => {
+            x
+          }
+        };
+        let g = f();
+        let result = g()
     """.trimIndent()
 
     val combinationAst = """

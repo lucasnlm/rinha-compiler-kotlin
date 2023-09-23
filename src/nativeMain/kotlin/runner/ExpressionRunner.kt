@@ -45,8 +45,7 @@ class ExpressionRunner(
         }
 
         return expressions.fold<Expression, Any?>(null) { _, expression ->
-            runExpression(
-                expression = expression,
+            expression.runExpression(
                 scope = context.variables,
                 root = null,
                 recursiveCall = 0,
@@ -108,148 +107,151 @@ class ExpressionRunner(
         }
     }
 
-    private fun runExpression(
-        expression: Expression,
+    private fun Expression.runExpression(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
+        canTailCallOptimize: Boolean = false,
     ): Any? {
-        return when (expression) {
-            is Expression.Var -> varExpression(expression, scope)
-            is Expression.IntValue -> intValueExpression(expression)
-            is Expression.BoolValue -> boolValueExpression(expression)
-            is Expression.StrValue -> strValueExpression(expression)
-            is Expression.Let -> letExpression(expression, scope, root, recursiveCall)
-            is Expression.Binary -> binaryExpression(expression, scope, root, recursiveCall)
-            is Expression.If -> ifExpression(expression, scope, root, recursiveCall)
-            is Expression.Function -> functionExpression(scope, expression)
-            is Expression.Call -> callExpression(expression, scope, root, recursiveCall)
-            is Expression.TupleValue -> tupleValueExpression(expression, scope, root, recursiveCall)
-            is Expression.First -> firstExpression(expression, scope, root, recursiveCall)
-            is Expression.Second -> secondExpression(expression, scope, root, recursiveCall)
-            is Expression.Print -> printExpression(expression, scope, root, recursiveCall)
+        return when (this) {
+            is Expression.Var -> getVariableValue(scope)
+            is Expression.IntValue -> getIntValue()
+            is Expression.BoolValue -> getBoolValue()
+            is Expression.StrValue -> getStringValue()
+            is Expression.Let -> defineExpression(scope, root, recursiveCall)
+            is Expression.Binary -> processOperation(scope, root, recursiveCall, canTailCallOptimize)
+            is Expression.If -> ifExpression(scope, root, recursiveCall, canTailCallOptimize)
+            is Expression.Function -> defineFunction(scope)
+            is Expression.Call -> callFunction(scope, root, recursiveCall, canTailCallOptimize)
+            is Expression.TupleValue -> createTuple(scope, root, recursiveCall)
+            is Expression.First -> first(scope, root, recursiveCall)
+            is Expression.Second -> second(scope, root, recursiveCall)
+            is Expression.Print -> print(scope, root, recursiveCall)
         }
     }
 
-    private fun varExpression(
-        expression: Expression.Var,
+    private fun Expression.Var.getVariableValue(
         scope: Map<String, Any?>,
     ): Any? {
-        val value =
-            scope[expression.name]
-                ?: context.variables[expression.name]
-                ?: throw RuntimeException("variable '${expression.name}' is not defined")
-
-        return if (value is Lazy<*>) {
-            value.value
-        } else {
-            value
-        }
+        return scope[name] ?: context.variables[name] ?: throw RuntimeException("variable '${name}' is not defined")
     }
 
-    private fun binaryExpression(
-        expression: Expression.Binary,
+    private fun Expression.Binary.processOperation(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
+        canTailCallOptimize: Boolean,
     ): Any {
-        return when (expression.operator) {
+        return when (this.operator) {
             BinaryOperator.Add -> {
                 mathAddExpression(
-                    expression = expression,
+                    expression = this,
                     scope = scope,
                     root = root,
                     recursiveCall = recursiveCall,
+                    canTailCallOptimize = canTailCallOptimize,
                 )
             }
             BinaryOperator.Sub -> {
                 mathSubExpression(
-                    expression = expression,
+                    expression = this,
                     scope = scope,
                     root = root,
                     recursiveCall = recursiveCall,
+                    canTailCallOptimize = canTailCallOptimize,
                 )
             }
             BinaryOperator.Mul -> mathMulExpression(
-                expression = expression,
+                expression = this,
                 scope = scope,
                 root = root,
                 recursiveCall = recursiveCall,
+                canTailCallOptimize = canTailCallOptimize,
             )
             BinaryOperator.Div -> mathDivExpression(
-                expression = expression,
+                expression = this,
                 scope = scope,
                 root = root,
                 recursiveCall = recursiveCall,
+                canTailCallOptimize = canTailCallOptimize,
             )
             BinaryOperator.Rem -> mathRemExpression(
-                expression = expression,
+                expression = this,
                 scope = scope,
                 root = root,
                 recursiveCall = recursiveCall,
+                canTailCallOptimize = canTailCallOptimize,
             )
             BinaryOperator.Eq -> {
                 comparativeExpression(
-                    expression = expression,
+                    expression = this,
                     scope = scope,
                     root = root,
                     recursiveCall = recursiveCall,
+                    canTailCallOptimize = canTailCallOptimize,
                 ) { left, right -> left == right }
             }
             BinaryOperator.Neq -> {
                 comparativeExpression(
-                    expression = expression,
+                    expression = this,
                     scope = scope,
                     root = root,
                     recursiveCall = recursiveCall,
+                    canTailCallOptimize = canTailCallOptimize,
                 ) { left, right -> left != right }
             }
             BinaryOperator.Or -> {
                 logicOrExpression(
-                    expression = expression,
+                    expression = this,
                     scope = scope,
                     root = root,
                     recursiveCall = recursiveCall,
+                    canTailCallOptimize = canTailCallOptimize,
                 )
             }
             BinaryOperator.And -> {
                 logicAndExpression(
-                    expression = expression,
+                    expression = this,
                     scope = scope,
                     root = root,
                     recursiveCall = recursiveCall,
+                    canTailCallOptimize = canTailCallOptimize,
                 )
             }
             BinaryOperator.Lt -> {
                 comparativeMathExpression(
-                    expression = expression,
+                    expression = this,
                     scope = scope,
                     root = root,
                     recursiveCall = recursiveCall,
+                    canTailCallOptimize = canTailCallOptimize,
                 ) { left, right -> left < right }
             }
             BinaryOperator.Lte -> {
                 comparativeMathExpression(
-                    expression = expression,
+                    expression = this,
                     scope = scope,
                     root = root,
                     recursiveCall = recursiveCall,
+                    canTailCallOptimize = canTailCallOptimize,
                 ) { left, right -> left <= right }
             }
             BinaryOperator.Gt -> {
                 comparativeMathExpression(
-                    expression = expression,
+                    expression = this,
                     scope = scope,
                     root = root,
                     recursiveCall = recursiveCall,
+                    canTailCallOptimize = canTailCallOptimize,
                 ) { left, right -> left > right }
             }
             BinaryOperator.Gte -> {
                 comparativeMathExpression(
-                    expression = expression,
+                    expression = this,
                     scope = scope,
                     root = root,
                     recursiveCall = recursiveCall,
+                    canTailCallOptimize = canTailCallOptimize,
                 ) { left, right -> left >= right }
             }
         }
@@ -260,10 +262,11 @@ class ExpressionRunner(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
+        canTailCallOptimize: Boolean,
         block: (left: Int, right: Int) -> Boolean,
     ): Boolean {
-        val left = runExpression(expression.left, scope, root, recursiveCall) as? Int
-        val right = runExpression(expression.right, scope, root, recursiveCall) as? Int
+        val left = expression.left.runExpression(scope, root, recursiveCall, canTailCallOptimize) as? Int
+        val right = expression.right.runExpression(scope, root, recursiveCall, canTailCallOptimize) as? Int
 
         if (left == null) {
             throw RuntimeException("left side of the expression is null")
@@ -280,10 +283,11 @@ class ExpressionRunner(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
+        canTailCallOptimize: Boolean,
         block: (left: Any?, right: Any?) -> Boolean,
     ): Boolean {
-        val left = runExpression(expression.left, scope, root, recursiveCall)
-        val right = runExpression(expression.right, scope, root, recursiveCall)
+        val left = expression.left.runExpression(scope, root, recursiveCall, canTailCallOptimize)
+        val right = expression.right.runExpression(scope, root, recursiveCall, canTailCallOptimize)
         return block(left, right)
     }
 
@@ -292,9 +296,10 @@ class ExpressionRunner(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
+        canTailCallOptimize: Boolean,
     ): Any {
-        val left = runExpression(expression.left, scope, root, recursiveCall)
-        val right = runExpression(expression.right, scope, root, recursiveCall)
+        val left = expression.left.runExpression(scope, root, recursiveCall, canTailCallOptimize)
+        val right = expression.right.runExpression(scope, root, recursiveCall, canTailCallOptimize)
         return if (left is Int && right is Int) {
             left.rem(right)
         } else {
@@ -307,13 +312,14 @@ class ExpressionRunner(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
+        canTailCallOptimize: Boolean,
     ): Any {
-        val left = runExpression(expression.left, scope, root, recursiveCall)
+        val left = expression.left.runExpression(scope, root, recursiveCall, canTailCallOptimize)
 
         return if (left == 0 || left == 0.0) {
             0
         } else {
-            val right = runExpression(expression.right, scope, root, recursiveCall)
+            val right = expression.right.runExpression(scope, root, recursiveCall)
             if (left is Int && right is Int) {
                 if (right == 0) {
                     NAN
@@ -331,13 +337,14 @@ class ExpressionRunner(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
+        canTailCallOptimize: Boolean,
     ): Any {
-        val left = runExpression(expression.left, scope, root, recursiveCall)
+        val left = expression.left.runExpression(scope, root, recursiveCall, canTailCallOptimize)
 
         return if (left == 0 || left == 0.0) {
             0
         } else {
-            val right = runExpression(expression.right, scope, root, recursiveCall)
+            val right = expression.right.runExpression(scope, root, recursiveCall)
             if (left is Int && right is Int) {
                 left * right
             } else {
@@ -351,9 +358,10 @@ class ExpressionRunner(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
+        canTailCallOptimize: Boolean,
     ): Any {
-        val left = runExpression(expression.left, scope, root, recursiveCall)
-        val right = runExpression(expression.right, scope, root, recursiveCall)
+        val left = expression.left.runExpression(scope, root, recursiveCall, canTailCallOptimize)
+        val right = expression.right.runExpression(scope, root, recursiveCall, canTailCallOptimize)
 
         return if (left is Int && right is Int) {
             left - right
@@ -367,16 +375,35 @@ class ExpressionRunner(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
+        canTailCallOptimize: Boolean,
     ): Any {
-        val left = runExpression(expression.left, scope, root, recursiveCall)
-        val right = runExpression(expression.right, scope, root, recursiveCall)
+        val left = expression.left.runExpression(scope, root, recursiveCall, canTailCallOptimize)
+        val right = expression.right.runExpression(scope, root, recursiveCall, canTailCallOptimize)
 
         return if (left is Int && right is Int) {
             left + right
+        } else if (left is String && right is Accumulator) {
+            right.apply {
+                value = left + right.asString()
+            }
+        } else if (left is Accumulator && right is String) {
+            left.apply {
+                value = left.asString() + right
+            }
+        } else if (right is Accumulator && left is String) {
+            left + right.asString()
         } else if (left is String || right is String) {
             left.toString() + right.toString()
         } else if (left is String) {
             left + right.toString()
+        } else if (right is Accumulator && left is Int) {
+            right.apply {
+                value = asInt() + left
+            }
+        } else if (left is Accumulator && right is Int) {
+            left.apply {
+                value = asInt() + right
+            }
         } else {
             throw RuntimeException("invalid add expression")
         }
@@ -387,14 +414,15 @@ class ExpressionRunner(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
+        canTailCallOptimize: Boolean,
     ): Boolean {
-        val left = runExpression(expression.left, scope, root, recursiveCall)
+        val left = expression.left.runExpression(scope, root, recursiveCall, canTailCallOptimize)
         val leftPart = ((left is Boolean && left) || (left is Int && left != 0))
         if (leftPart) {
             return true
         }
 
-        val right = runExpression(expression.right, scope, root, recursiveCall)
+        val right = expression.right.runExpression(scope, root, recursiveCall, canTailCallOptimize)
         return ((right is Boolean && right) || (right is Int && right != 0))
     }
 
@@ -403,31 +431,31 @@ class ExpressionRunner(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
+        canTailCallOptimize: Boolean,
     ): Boolean {
-        val left = runExpression(expression.left, scope, root, recursiveCall)
+        val left = expression.left.runExpression(scope, root, recursiveCall, canTailCallOptimize)
         val leftPart = ((left is Boolean && left) || (left is Int && left != 0))
         if (!leftPart) {
             return false
         }
 
-        val right = runExpression(expression.right, scope, root, recursiveCall)
+        val right = expression.right.runExpression(scope, root, recursiveCall, canTailCallOptimize)
         return ((right is Boolean && right) || (right is Int && right != 0))
     }
 
-    private fun firstExpression(
-        expression: Expression.First,
+    private fun Expression.First.first(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
     ): Any? {
-        return if (expression.value.size > 1) {
+        return if (this.value.size > 1) {
             throw RuntimeException("'first' function can only one argument")
         } else {
-            val value = expression.value.first()
+            val value = this.value.first()
             if (value is Expression.TupleValue) {
-                runExpression(value.first, scope, root, recursiveCall)
+                value.first.runExpression(scope, root, recursiveCall)
             } else {
-                when (val valueExpr = runExpression(value, scope, root, recursiveCall)) {
+                when (val valueExpr = value.runExpression(scope, root, recursiveCall)) {
                     is Pair<*, *> -> valueExpr.first
                     else -> throw RuntimeException("'first' function can only handle Tuples")
                 }
@@ -435,20 +463,19 @@ class ExpressionRunner(
         }
     }
 
-    private fun secondExpression(
-        expression: Expression.Second,
+    private fun Expression.Second.second(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
     ): Any? {
-        return if (expression.value.size > 1) {
+        return if (this.value.size > 1) {
             throw RuntimeException("'second' function can only one argument")
         } else {
-            val value = expression.value.first()
+            val value = this.value.first()
             if (value is Expression.TupleValue) {
-                runExpression(value.second, scope, root, recursiveCall)
+                value.second.runExpression(scope, root, recursiveCall)
             } else {
-                when (val valueExpr = runExpression(value, scope, root, recursiveCall)) {
+                when (val valueExpr = value.runExpression(scope, root, recursiveCall)) {
                     is Pair<*, *> -> valueExpr.second
                     else -> throw RuntimeException("'second' function can only handle Tuples")
                 }
@@ -456,107 +483,94 @@ class ExpressionRunner(
         }
     }
 
-    private fun ifExpression(
-        expression: Expression.If,
+    private fun Expression.If.ifExpression(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
+        canTailCallOptimize: Boolean,
     ): Any? {
-        val condition = runExpression(
-            expression = expression.condition,
+        val condition = this.condition.runExpression(
             scope = scope,
             root = root,
             recursiveCall = recursiveCall,
         )
         return if (condition == true) {
-            expression.then.fold<Expression, Any?>(null) { _, functionExpression ->
-                runExpression(
-                    expression = functionExpression,
+            this.then.fold<Expression, Any?>(null) { _, functionExpression ->
+                functionExpression.runExpression(
                     scope = scope,
                     root = root,
                     recursiveCall = recursiveCall,
+                    canTailCallOptimize = canTailCallOptimize,
                 )
             }
         } else {
-            expression.otherwise?.fold<Expression, Any?>(null) { _, functionExpression ->
-                runExpression(
-                    expression = functionExpression,
+            this.otherwise?.fold<Expression, Any?>(null) { _, functionExpression ->
+                functionExpression.runExpression(
                     scope = scope,
                     root = root,
                     recursiveCall = recursiveCall,
+                    canTailCallOptimize = canTailCallOptimize,
                 )
             }
         }
     }
 
-    private fun strValueExpression(
-        expression: Expression.StrValue,
-    ): String {
-        return expression.value
+    private fun Expression.StrValue.getStringValue(): String {
+        return value
     }
 
-    private fun intValueExpression(
-        expression: Expression.IntValue,
-    ): Int {
-        return expression.value
+    private fun Expression.IntValue.getIntValue(): Int {
+        return value
     }
 
-    private fun boolValueExpression(
-        expression: Expression.BoolValue,
-    ): Boolean {
-        return expression.value
+    private fun Expression.BoolValue.getBoolValue(): Boolean {
+        return value
     }
 
-    private fun tupleValueExpression(
-        expression: Expression.TupleValue,
+    private fun Expression.TupleValue.createTuple(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
     ): Any {
-        val first = runExpression(expression.first, scope, root, recursiveCall)
-        val second = runExpression(expression.second, scope, root, recursiveCall)
+        val first = this.first.runExpression(scope, root, recursiveCall)
+        val second = this.second.runExpression(scope, root, recursiveCall)
         return first to second
     }
 
-    private fun letExpression(
-        expression: Expression.Let,
+    private fun Expression.Let.defineExpression(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
     ): Any? {
-        val value = runExpression(
-            expression = expression.value,
+        val value = this.value.runExpression(
             scope = scope,
             root = root,
             recursiveCall = recursiveCall,
         )
-        val sanitizedName = expression.name.replace("_", "")
+        val sanitizedName = this.name.replace("_", "")
         if (sanitizedName.isNotBlank()) {
             if (RESERVED_WORDS.contains(sanitizedName)) {
                 throw RuntimeException("can't use reserved word '$sanitizedName' as variable name")
             }
-            scope[expression.name] = value
+            scope[this.name] = value
         }
         return value
     }
 
-    private fun functionExpression(
+    private fun Expression.Function.defineFunction(
         scope: Map<String, Any?>,
-        expression: Expression.Function,
     ): Any {
         // Function will be executed only when called.
-        return expression.copy(scopeCopy = scope + context.variables)
+        return copy(scopeCopy = scope + context.variables)
     }
 
-    private fun printExpression(
-        expression: Expression.Print,
+    private fun Expression.Print.print(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int,
     ): Any? {
-        val result = if (expression.value.size == 1) {
-            runExpression(
-                expression = expression.value.first(),
+        val result = if (this.value.size == 1) {
+            this.value.first().runExpression(
                 scope = scope,
                 root = root,
                 recursiveCall = recursiveCall,
@@ -579,91 +593,159 @@ class ExpressionRunner(
         return result
     }
 
-    private fun callExpression(
-        expression: Expression.Call,
+    private fun Expression.Call.callFunction(
         scope: MutableMap<String, Any?>,
         root: String?,
         recursiveCall: Int = 0,
+        canTailCallOptimize: Boolean,
     ): Any? {
-        val targetWrapped = context.variables[expression.callee.name]
-        val target = if (targetWrapped is Lazy<*>) {
-            targetWrapped.value
-        } else {
-            targetWrapped
-        }
-
-        return when (target) {
+        val callerName = this.callee.name
+        return when (val target = context.variables[callerName]) {
             null -> {
-                throw RuntimeException("function '${expression.callee.name}' is not defined")
+                throw RuntimeException("function '${callerName}' is not defined")
             }
             !is Expression.Function -> {
-                throw RuntimeException("'${expression.callee.name}' is not a function")
+                throw RuntimeException("'${callerName}' is not a function")
             }
-            (target.parameters.size != expression.arguments.size) -> {
-                throw RuntimeException("missing param at '${expression.callee.name}' call")
+            (target.parameters.size != this.arguments.size) -> {
+                throw RuntimeException("missing param at '${callerName}' call")
             }
             else -> {
-                val result: Any? = if (context.runtimeOptimization) {
+                // Check for some predefined optimizations
+                if (context.runtimeOptimization) {
                     RunTimeOptimizations.checkRunTimeOptimizations(
-                        exprCall = expression,
+                        exprCall = this,
                         expressions = target.value,
-                    )
-                } else {
-                    null
+                    ).also {
+                        if (it != null) {
+                            return it
+                        }
+                    }
                 }
 
-                val newRecursiveCall = if (root == expression.callee.name) {
+                // Check for recursive calls
+                val recursiveCallDepth = if (root == callerName) {
                     // Recursive call detected
-                    recursiveCall + 1
+                    recursiveCall.inc().also {
+                        if (it > 900) { throw RuntimeException("recursive call limit exceeded") }
+                    }
                 } else {
                     1
                 }
 
-                if (recursiveCall > 900) {
-                    throw RuntimeException("recursive call limit exceeded")
+                val functionScope = (scope + target.scopeCopy).toMutableMap()
+                val resolvedArguments = target.parameters.mapIndexed { index: Int, param: String ->
+                    param to this.arguments[index].runExpression(
+                        scope = functionScope,
+                        root = callerName,
+                        recursiveCall = recursiveCallDepth,
+                    )
+                }
+                var newScope = target.scopeCopy.toMutableMap().apply { putAll(resolvedArguments) }
+
+                if (canTailCallOptimize) {
+                    return Accumulator(newScope)
                 }
 
-                if (result != null) {
-                    result
+                val cached = if (context.cacheEnabled && !canTailCallOptimize) {
+                    context.functionCache[callerName]?.get(newScope.toString())
                 } else {
-                    val functionScope = (scope + target.scopeCopy).toMutableMap()
+                    null
+                }
 
-                    val resolvedArguments = target.parameters.mapIndexed { index: Int, param: String ->
-                        param to runExpression(
-                            expression = expression.arguments[index],
-                            scope = functionScope,
-                            root = expression.callee.name,
-                            recursiveCall = newRecursiveCall,
-                        )
+                val isTailCallOptimizable = checkTailRecursive(this, target.value)
+                var itResult: Any? = null
+                var accValue: Accumulator? = null
+
+                do {
+                    if (itResult is Accumulator) {
+                        newScope = itResult.scope.toMutableMap()
+                        accValue = accValue?.resolve(itResult) ?: itResult
                     }
 
-                    val newScope = target.scopeCopy.toMutableMap().apply { putAll(resolvedArguments) }
-
-                    val cached = if (context.cacheEnabled) {
-                        context.functionCache[expression.callee.name]?.get(newScope.toString())
-                    } else {
-                        null
-                    }
-
-                    cached ?: target
+                    itResult = cached ?: target
                         .value
                         .fold<Expression, Any?>(null) { _, functionExpression ->
-                            runExpression(
-                                expression = functionExpression,
+                            functionExpression.runExpression(
                                 scope = newScope,
-                                root = expression.callee.name,
-                                recursiveCall = newRecursiveCall,
+                                root = callerName,
+                                recursiveCall = recursiveCallDepth,
+                                canTailCallOptimize = isTailCallOptimizable,
                             )
                         }.also {
-                            if (context.cacheEnabled) {
-                                val cacheMap = context.functionCache[expression.callee.name] ?: mutableMapOf()
+                            if (context.cacheEnabled && !isTailCallOptimizable) {
+                                val cacheMap = context.functionCache[callerName] ?: mutableMapOf()
                                 cacheMap[newScope.toString()] = it
-                                context.functionCache[expression.callee.name] = cacheMap
+                                context.functionCache[callerName] = cacheMap
                             }
                         }
+                } while (itResult is Accumulator)
+
+                if (accValue != null) {
+                    when (itResult) {
+                        is Int -> {
+                            itResult + accValue.asInt()
+                        }
+                        is String -> {
+                            accValue.asString() + itResult
+                        }
+                        else -> {
+                            itResult
+                        }
+                    }
+                } else {
+                    itResult
                 }
             }
         }
+    }
+
+    private fun checkTailRecursive(
+        caller: Expression.Call,
+        expressions: List<Expression>,
+    ): Boolean {
+        var result = false
+
+        if (expressions.isNotEmpty()) {
+            val callerName = caller.callee.name
+            var count = 0
+            for (expr in expressions) {
+                count += expr.findCalls(callerName)
+                if (count > 1) {
+                    break
+                }
+            }
+            result = (count == 1)
+        }
+
+        return result
+    }
+
+    private fun Expression.findCalls(
+        callerName: String,
+    ): Int {
+        var count = 0
+
+        if (this is Expression.Call && callee.name == callerName) {
+            count++
+        } else if (this is Expression.Binary) {
+            count += left.findCalls(callerName)
+            if (count > 1) {
+                return count
+            }
+            count += right.findCalls(callerName)
+        } else if (this is Expression.If) {
+            count += this.then.sumOf {
+                it.findCalls(callerName)
+            }
+            if (count > 1) {
+                return count
+            }
+            count += this.otherwise?.sumOf {
+                it.findCalls(callerName)
+            } ?: 0
+        }
+        return count
     }
 
     companion object {

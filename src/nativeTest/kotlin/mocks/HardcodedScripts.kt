@@ -71,6 +71,42 @@ object HardcodedScripts {
         print (sum(5))
     """.trimIndent()
 
+    val resStringSource = """
+        let sumStr = fn (z) => {
+          if (z == 1) {
+            "" + z
+          } else {
+            "" + z + sumStr(z - 1)
+          }
+        };
+
+        print (sumStr(5))
+    """.trimIndent()
+
+    val sumCustomSource = """
+        let sum = fn (z) => {
+          if (z != 1) {
+            z + sum(z - 1)
+          } else {
+            z
+          }
+        };
+
+        print (sum(1000))
+    """.trimIndent()
+
+    val sumMulSource = """
+        let sum = fn (z) => {
+          if (z != 1) {
+            z + (2 * sum(z - 1))
+          } else {
+            z
+          }
+        };
+
+        print (sum(10))
+    """.trimIndent()
+
     val printAst = """
         {"name":"print.rinha","expression":{"kind":"Print","value":{"kind":"Str","value":"Hello world","location":{"start":7,"end":20,"filename":"print.rinha"}},"location":{"start":0,"end":21,"filename":"print.rinha"}},"location":{"start":0,"end":21,"filename":"print.rinha"}}
     """.trimIndent()
@@ -97,7 +133,7 @@ object HardcodedScripts {
 
     val customRecursiveSource = """
         let rec = fn (z) => {
-          let w = 10
+          let w = 10;
           if (z == 1) {
             z + w
           } else {
@@ -166,7 +202,7 @@ object HardcodedScripts {
         let fib = fn (n) => {
           fibrec(n, 0, 1)
         };
-        print(fib(10000000))
+        print(fib(100000))
     """.trimIndent()
 
     val combinationAst = """

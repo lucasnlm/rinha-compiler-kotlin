@@ -57,14 +57,17 @@ class AstParserTest {
     fun `test Let json parser`() {
         val content = JsonFileReader.parse(AstMocks.LET).getOrThrow()
         val expressions = AstParser.parseAstFile(content).getOrThrow()
-        assertEquals(listOf(
-            Expression.Let(
-                name = "x",
-                value = Expression.IntValue(10),
+        assertEquals(
+            listOf(
+                Expression.Let(
+                    name = "x",
+                    value = Expression.IntValue(10),
+                ),
+                Expression.Print(
+                    value = listOf(Expression.Var("x")),
+                ),
             ),
-            Expression.Print(
-                value = listOf(Expression.Var("x")),
-            )
-        ), expressions)
+            expressions,
+        )
     }
 }

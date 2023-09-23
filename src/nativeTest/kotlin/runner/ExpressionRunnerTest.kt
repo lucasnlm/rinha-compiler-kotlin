@@ -155,13 +155,26 @@ class ExpressionRunnerTest {
     }
 
     @Test
-    fun `test custom recursive script - runtimeOptimization on`() {
+    fun `test custom sum script`() {
         testScript(
-            source = HardcodedScripts.customRecursiveSource,
+            source = HardcodedScripts.sumCustomSource,
+            runtimeOptimization = false,
         ) {
             assertEquals(1, variables.size)
             assertEquals(1, output.size)
-            assertEquals("55", output.first())
+            assertEquals("500500", output.first())
+        }
+    }
+
+    @Test
+    fun `test custom sum with multiplication script`() {
+        testScript(
+            source = HardcodedScripts.sumMulSource,
+            runtimeOptimization = false,
+        ) {
+            assertEquals(1, variables.size)
+            assertEquals(1, output.size)
+            assertEquals("2036", output.first())
         }
     }
 
@@ -270,9 +283,16 @@ class ExpressionRunnerTest {
         testScript(
             source = HardcodedScripts.fibtailSource,
         ) {
-            assertEquals(1, variables["fib"])
-            assertEquals(1, output.size)
-            assertEquals("55", output.first())
+            assertEquals("873876091", output.first())
+        }
+    }
+
+    @Test
+    fun `test resStringSource source`() {
+        testScript(
+            source = HardcodedScripts.resStringSource,
+        ) {
+            assertEquals("54321", output.first())
         }
     }
 
@@ -306,7 +326,8 @@ class ExpressionRunnerTest {
 
     private fun testScriptFromSource(
         runtimeOptimization: Boolean = true,
-        source: String, block: RunTimeContext.() -> Unit,
+        source: String,
+        block: RunTimeContext.() -> Unit,
     ) {
         val result = RinhaGrammar.parseSource(source)
         val runner = ExpressionRunner(

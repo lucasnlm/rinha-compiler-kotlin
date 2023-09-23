@@ -52,6 +52,7 @@ import parser.ExpressionJsonIds.LOCATION_FILENAME
 import parser.ExpressionJsonIds.LOCATION_START
 import parser.JsonObjectExt.array
 import parser.JsonObjectExt.obj
+import parser.JsonObjectExt.objOrNull
 import parser.JsonObjectExt.value
 
 object AstParser {
@@ -73,22 +74,28 @@ object AstParser {
     /**
      * List of parsers for each expression kind.
      */
-    private val expressionParserMap by lazy {
-        mapOf(
-            EXPRESSION_LET_ID to ::parseLetExpression,
-            EXPRESSION_FUNCTION_ID to ::parseFunctionExpression,
-            EXPRESSION_IF_ID to ::parseIfExpression,
-            EXPRESSION_BINARY_ID to ::parseBinaryExpression,
-            EXPRESSION_VAR_ID to ::parseVarExpression,
-            EXPRESSION_INT_ID to ::parseIntExpression,
-            EXPRESSION_STR_ID to ::parseStrExpression,
-            EXPRESSION_TUPLE_ID to ::parseTupleExpression,
-            EXPRESSION_FIRST_ID to ::parseFirstExpression,
-            EXPRESSION_SECOND_ID to ::parseSecondExpression,
-            EXPRESSION_BOOL_ID to ::parseBoolExpression,
-            EXPRESSION_CALL_ID to ::parseCallExpression,
-            EXPRESSION_PRINT_ID to ::parsePrintExpression,
-        )
+    private fun JsonObject.toExpressionOf(kind: String): Expression {
+        return when (kind) {
+            EXPRESSION_LET_ID -> parseLetExpression()
+            EXPRESSION_TUPLE_ID -> parseTupleExpression()
+            EXPRESSION_FUNCTION_ID -> parseFunctionExpression()
+            EXPRESSION_IF_ID -> parseIfExpression()
+            EXPRESSION_BINARY_ID -> parseBinaryExpression()
+            EXPRESSION_VAR_ID -> parseVarExpression()
+            EXPRESSION_INT_ID -> parseIntExpression()
+            EXPRESSION_STR_ID -> parseStrExpression()
+            EXPRESSION_FIRST_ID -> parseFirstExpression()
+            EXPRESSION_SECOND_ID -> parseSecondExpression()
+            EXPRESSION_BOOL_ID -> parseBoolExpression()
+            EXPRESSION_CALL_ID -> parseCallExpression()
+            EXPRESSION_PRINT_ID -> parsePrintExpression()
+            else -> throw AstParseException("unexpected expression '$kind'", tryGetLocation())
+        }
+    }
+
+    private fun JsonObject.parseExpressionByKind(): Expression {
+        val kind = get(EXPRESSION_KIND)?.jsonPrimitive?.content ?: throw AstParseException("missing expression kind", tryGetLocation())
+        return toExpressionOf(kind)
     }
 
     private fun JsonObject.tryGetLocation(): ExpressionLocation? {
@@ -97,69 +104,47 @@ object AstParser {
         }.getOrNull()
     }
 
-    private fun parseTupleExpression(json: JsonObject): Expression.TupleValue = with(json) {
-        val first = obj(EXPRESSION_TUPLE_FIRST)?.parseExpression()
-            ?: throw AstParseException("invalid first at Tuple", tryGetLocation())
-        val second = obj(EXPRESSION_TUPLE_SECOND)?.parseExpression()
-            ?: throw AstParseException("invalid second at Tuple", tryGetLocation())
-
+    private fun JsonObject.parseTupleExpression(): Expression.TupleValue {
         return Expression.TupleValue(
-            first = first,
-            second = second,
+            first = expr(EXPRESSION_TUPLE_FIRST),
+            second = expr(EXPRESSION_TUPLE_SECOND),
         )
     }
 
-    private fun parseFirstExpression(json: JsonObject): Expression.First = with(json) {
-        val value = obj(EXPRESSION_FIRST_VALUE)?.parseExpression()
-            ?: throw AstParseException("invalid value at First", tryGetLocation())
-
+    private fun JsonObject.parseFirstExpression(): Expression.First {
         return Expression.First(
-            value = listOf(value),
+            value = listOf(expr(EXPRESSION_FIRST_VALUE)),
         )
     }
 
-    private fun parseSecondExpression(json: JsonObject): Expression.Second = with(json) {
-        val value = obj(EXPRESSION_SECOND_VALUE)?.parseExpression()
-            ?: throw AstParseException("invalid value at Second", tryGetLocation())
-
+    private fun JsonObject.parseSecondExpression(): Expression.Second {
         return Expression.Second(
-            value = listOf(value),
+            value = listOf(expr(EXPRESSION_SECOND_VALUE)),
         )
     }
 
-    private fun parseBoolExpression(json: JsonObject): Expression.BoolValue = with(json) {
-        val value = value(EXPRESSION_BOOL_VALUE)
-            ?: throw AstParseException("invalid value at Bool", tryGetLocation())
-
+    private fun JsonObject.parseBoolExpression(): Expression.BoolValue {
         return Expression.BoolValue(
-            value = value.toBoolean(),
+            value = value(EXPRESSION_BOOL_VALUE).toBoolean(),
         )
     }
 
-    private fun parseStrExpression(json: JsonObject): Expression.StrValue = with(json) {
-        val value = value(EXPRESSION_STR_VALUE)
-            ?: throw AstParseException("invalid value at Str", tryGetLocation())
-
+    private fun JsonObject.parseStrExpression(): Expression.StrValue {
         return Expression.StrValue(
-            value = value,
+            value = value(EXPRESSION_STR_VALUE),
         )
     }
 
-    private fun parsePrintExpression(json: JsonObject): Expression.Print = with(json) {
-        val value = obj(EXPRESSION_PRINT_VALUE)?.parseExpression()
-            ?: throw AstParseException("invalid value at Print", tryGetLocation())
-
+    private fun JsonObject.parsePrintExpression(): Expression.Print {
         return Expression.Print(
-            value = listOf(value),
+            value = listOf(expr(EXPRESSION_PRINT_VALUE)),
         )
     }
 
-    private fun parseCallExpression(json: JsonObject): Expression.Call = with(json) {
-        val calleeObj = obj(EXPRESSION_CALL_CALLEE)
-            ?: throw AstParseException("invalid callee at Call", tryGetLocation())
-        val callee = parseVarExpression(calleeObj)
+    private fun JsonObject.parseCallExpression(): Expression.Call {
+        val callee = obj(EXPRESSION_CALL_CALLEE).parseVarExpression()
         val arguments = array(EXPRESSION_CALL_ARGUMENTS)?.mapNotNull {
-            it.jsonObject.parseExpression()
+            it.jsonObject.parseExpressionByKind()
         } ?: throw AstParseException("invalid arguments at Call", tryGetLocation())
 
         return Expression.Call(
@@ -168,31 +153,22 @@ object AstParser {
         )
     }
 
-    private fun parseIntExpression(json: JsonObject): Expression.IntValue = with(json) {
-        val value = value(EXPRESSION_INT_VALUE)
-            ?: throw AstParseException("invalid value at Int", tryGetLocation())
-
+    private fun JsonObject.parseIntExpression(): Expression.IntValue {
         return Expression.IntValue(
-            value = value.toInt(),
+            value = value(EXPRESSION_INT_VALUE).toInt(),
         )
     }
 
-    private fun parseVarExpression(json: JsonObject): Expression.Var = with(json) {
-        val name = value(EXPRESSION_VAR_TEXT)
-            ?: throw AstParseException("invalid name at Var", tryGetLocation())
-
+    private fun JsonObject.parseVarExpression(): Expression.Var {
         return Expression.Var(
-            name = name,
+            name = value(EXPRESSION_VAR_TEXT),
         )
     }
 
-    private fun parseBinaryExpression(json: JsonObject): Expression.Binary = with(json) {
-        val left = obj(EXPRESSION_BINARY_LEFT)?.parseExpression()
-            ?: throw AstParseException("invalid left at Binary", tryGetLocation())
-        val right = obj(EXPRESSION_BINARY_RIGHT)?.parseExpression()
-            ?: throw AstParseException("invalid right at Binary", tryGetLocation())
+    private fun JsonObject.parseBinaryExpression(): Expression.Binary {
+        val left = expr(EXPRESSION_BINARY_LEFT)
+        val right = expr(EXPRESSION_BINARY_RIGHT)
         val operator = value(EXPRESSION_BINARY_OPERATOR)
-            ?: throw AstParseException("invalid operator at Binary", tryGetLocation())
 
         if (BinaryOperator.entries.find { it.name == operator } == null) {
             throw AstParseException("invalid operator '$operator' at Binary", tryGetLocation())
@@ -205,34 +181,32 @@ object AstParser {
         )
     }
 
-    private fun parseIfExpression(json: JsonObject): Expression.If = with(json) {
-        val condition = obj(EXPRESSION_IF_CONDITION)?.parseExpression()
-            ?: throw AstParseException("invalid condition at If", tryGetLocation())
-        val then = obj(EXPRESSION_IF_THEN)?.parseExpression()
-            ?: throw AstParseException("invalid then at If", tryGetLocation())
-        val otherwise = obj(EXPRESSION_IF_OTHERWISE)?.parseExpression()
+    private fun JsonObject.parseIfExpression(): Expression.If {
+        val condition = expr(EXPRESSION_IF_CONDITION)
+        val then = expr(EXPRESSION_IF_THEN)
+        val otherwise = exprOrNull(EXPRESSION_IF_OTHERWISE)
 
         return Expression.If(
             condition = condition,
             then = listOf(then),
-            otherwise = otherwise?.let { listOf(it) },
+            otherwise = listOfNotNull(otherwise),
         )
     }
 
-    private fun parseFunctionExpression(json: JsonObject): Expression.Function = with(json) {
+    private fun JsonObject.parseFunctionExpression(): Expression.Function {
         val name = optName()
         val parameters = array(EXPRESSION_FUNCTION_PARAMS)?.mapNotNull {
             it.jsonObject.value(EXPRESSION_FUNCTION_PARAM_NAME)
         } ?: throw AstParseException("invalid parameters at Function", tryGetLocation())
 
-        var currentFunctionExpr = obj(EXPRESSION_FUNCTION_VALUE)
+        var currentFunctionExpr: JsonObject? = obj(EXPRESSION_FUNCTION_VALUE)
         val expressions = mutableListOf<Expression>()
 
         do {
-            val expr = currentFunctionExpr?.parseExpression()
-                ?: throw AstParseException("invalid value at Function", tryGetLocation())
-            expressions.add(expr)
-            currentFunctionExpr = currentFunctionExpr.next()
+            currentFunctionExpr?.parseExpressionByKind()?.let {
+                expressions.add(it)
+            }
+            currentFunctionExpr = currentFunctionExpr?.next()
         } while (currentFunctionExpr != null)
 
         return Expression.Function(
@@ -242,15 +216,10 @@ object AstParser {
         )
     }
 
-    private fun parseLetExpression(json: JsonObject): Expression.Let = with(json) {
-        val name = obj(EXPRESSION_NAME)?.value(EXPRESSION_LET_TEXT)
-            ?: throw AstParseException("missing name at Let", tryGetLocation())
-        val value = obj(EXPRESSION_LET_VALUE)?.parseExpression()
-            ?: throw AstParseException("invalid value at Let", tryGetLocation())
-
+    private fun JsonObject.parseLetExpression(): Expression.Let {
         return Expression.Let(
-            name = name,
-            value = value,
+            name = obj(EXPRESSION_NAME).value(EXPRESSION_LET_TEXT),
+            value = expr(EXPRESSION_LET_VALUE),
         )
     }
 
@@ -276,12 +245,6 @@ object AstParser {
         return get(EXPRESSION_NAME)?.jsonPrimitive?.content
     }
 
-    private fun JsonObject.parseExpression(): Expression {
-        val kind = get(EXPRESSION_KIND)?.jsonPrimitive?.content ?: throw AstParseException("Missing expression kind", tryGetLocation())
-        val parser = expressionParserMap[kind] ?: throw AstParseException("Unexpected expression '$kind'", tryGetLocation())
-        return parser(this)
-    }
-
     private fun JsonObject.next(): JsonObject? {
         return (get(EXPRESSION_NEXT) ?: get(EXPRESSION_ROOT_NEXT))?.jsonObject
     }
@@ -294,7 +257,7 @@ object AstParser {
             val hasNext = currentExpr != null
 
             currentExpr?.let {
-                val currentExpression = it.parseExpression()
+                val currentExpression = it.parseExpressionByKind()
                 expressions.add(currentExpression)
 
                 currentExpr = it.next()
@@ -302,5 +265,13 @@ object AstParser {
         } while (hasNext)
 
         return Result.success(expressions)
+    }
+
+    private fun JsonObject.expr(key: String): Expression {
+        return obj(key).parseExpressionByKind()
+    }
+
+    private fun JsonObject.exprOrNull(key: String): Expression? {
+        return objOrNull(key)?.parseExpressionByKind()
     }
 }

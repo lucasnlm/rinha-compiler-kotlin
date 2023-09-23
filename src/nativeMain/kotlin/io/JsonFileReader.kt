@@ -34,7 +34,10 @@ object JsonFileReader {
             }
     }
 
-    private fun parse(jsonContent: String): Result<JsonObject> {
+    /**
+     * Parse a JSON string into a [JsonObject].
+     */
+    fun parse(jsonContent: String): Result<JsonObject> {
         val format = Json {
             isLenient = true
             coerceInputValues = true

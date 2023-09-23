@@ -3,7 +3,7 @@ package parser
 /**
  * Expressions names used by the Json parser.
  */
-object Expressions {
+object ExpressionJsonIds {
     const val EXPRESSION_NAME = "name"
     const val EXPRESSION_ROOT_NEXT = "expression"
     const val EXPRESSION_KIND = "kind"

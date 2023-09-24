@@ -1,0 +1,8 @@
+#!/bin/sh
+
+rm -f rinhak
+rm -rf ./build
+rm -f rinha-compiler-kotlin-linux-64.zip
+./gradlew nativeBinaries
+mv ./build/bin/native/releaseExecutable/rinha-compiler-kotlin.kexe ./rinhak
+zip -r rinha-compiler-kotlin-linux-64.zip rinhak

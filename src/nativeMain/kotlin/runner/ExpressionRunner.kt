@@ -132,7 +132,7 @@ class ExpressionRunner(
 
     private fun Expression.Var.getVariableValue(
         scope: Map<String, Any?>,
-    ): Any? {
+    ): Any {
         return scope[name] ?: context.variables[name] ?: throw RuntimeException("variable '${name}' is not defined")
     }
 

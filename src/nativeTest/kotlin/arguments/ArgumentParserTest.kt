@@ -34,4 +34,13 @@ class ArgumentParserTest {
             assertEquals(it.value, ArgumentParser.parse(it.key))
         }
     }
+
+    @Test
+    fun `rinha mode arg`() {
+        mapOf(
+            arrayOf("rinha") to Arguments(rinhaMode = true),
+        ).forEach {
+            assertEquals(it.value, ArgumentParser.parse(it.key))
+        }
+    }
 }

@@ -1,4 +1,4 @@
 #!/bin/sh
 
 cd /var/rinha
-./rinhak $1
+./rinhak rinha

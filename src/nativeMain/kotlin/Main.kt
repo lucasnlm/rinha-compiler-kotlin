@@ -8,6 +8,7 @@ fun main(originalArguments: Array<String> = arrayOf()) {
 
     // Run the given argument
     when {
+        arguments.rinhaMode -> runRinhaFile()
         arguments.showHelp -> showHelp()
         arguments.astFilePath?.isBlank() == false -> FileRunner.runFromAstFile(arguments.astFilePath)
         arguments.sourceFilePath?.isBlank() == false -> FileRunner.runFromRinhaFile(arguments.sourceFilePath)
@@ -30,4 +31,9 @@ fun showHelp() {
 
 fun runRepl() {
     ReplManager.run()
+}
+
+fun runRinhaFile() {
+    val rinhaFilePath = "/var/rinha/source.rinha.json"
+    FileRunner.runFromAstFile(rinhaFilePath)
 }

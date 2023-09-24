@@ -72,9 +72,11 @@ You can also use the docker image to run the interpreter.
 docker build -t "rinha:Dockerfile" .
 docker run -it rinha:Dockerfile
 
-# rinhak will run the json AST of rinha generated code
-# rinha should already be available to use too.
-./rinhak files/print.json
+# Example:
+docker run -it rinha:Dockerfile /var/rinha/test.rinha
+
+# Example to run REPL:
+docker run -it rinha:Dockerfile
 ```
 
 You can also call `rinha file.rinha` to generate a new Json.

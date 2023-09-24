@@ -344,8 +344,8 @@ class ExpressionRunner(
     private fun Expression.If.ifExpression(
         context: FunctionContext,
     ): Any? {
-        val condition = this.condition.runExpression(context)
-        return if (condition == true) {
+        val result = condition.runExpression(context)
+        return if (result == true) {
             then.runExpression(context)
         } else {
             otherwise.runExpression(context)
@@ -367,21 +367,21 @@ class ExpressionRunner(
     private fun Expression.TupleValue.createTuple(
         context: FunctionContext,
     ): Any {
-        val first = this.first.runExpression(context)
-        val second = this.second.runExpression(context)
+        val first = first.runExpression(context)
+        val second = second.runExpression(context)
         return first to second
     }
 
     private fun Expression.Let.defineExpression(
         context: FunctionContext,
     ): Any? {
-        val value = this.value.runExpression(context)
-        val sanitizedName = this.name.replace("_", "")
+        val value = value.runExpression(context)
+        val sanitizedName = name.replace("_", "")
         if (sanitizedName.isNotBlank()) {
             if (RESERVED_WORDS.contains(sanitizedName)) {
                 throw RuntimeException("can't use reserved word '$sanitizedName' as variable name")
             }
-            context.scope[this.name] = value
+            context.scope[name] = value
         }
         return value
     }
@@ -396,8 +396,8 @@ class ExpressionRunner(
     private fun Expression.Print.printExpr(
         context: FunctionContext,
     ): Any? {
-        val result = if (this.value.size == 1) {
-            this.value.first().runExpression(context).also {
+        val result = if (value.size == 1) {
+            value.first().runExpression(context).also {
                 val asString = it.toString()
                 runtimeContext.output.add(asString)
                 println(asString)
@@ -419,7 +419,7 @@ class ExpressionRunner(
     private fun Expression.Call.callFunction(
         context: FunctionContext,
     ): Any? {
-        val callerName = this.callee.name
+        val callerName = callee.name
         val target = context.scope[callerName] ?: runtimeContext.variables[callerName]
         return when (target) {
             null -> {
@@ -461,7 +461,7 @@ class ExpressionRunner(
                     recursiveCall = recursiveCallDepth,
                 )
                 val resolvedArguments = target.parameters.mapIndexed { index: Int, param: String ->
-                    param to this.arguments[index].runExpression(newFunctionContext)
+                    param to arguments[index].runExpression(newFunctionContext)
                 }
                 var newScope = target.scopeCopy.toMutableMap().apply { putAll(resolvedArguments) }
 
@@ -557,11 +557,11 @@ class ExpressionRunner(
             }
             count += right.findCalls(callerName)
         } else if (this is Expression.If) {
-            count += this.then.findCalls(callerName)
+            count += then.findCalls(callerName)
             if (count > 1) {
                 return count
             }
-            count += this.otherwise.findCalls(callerName)
+            count += otherwise.findCalls(callerName)
         }
         return count
     }

@@ -1,5 +1,7 @@
 .gradle
 build/
+download/
+rinha-compiler-kotlin-linux-64.zip
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/

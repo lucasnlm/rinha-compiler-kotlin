@@ -231,8 +231,8 @@ object RinhaGrammar : Grammar<List<Expression>>() {
     private val ifStatement: Parser<Expression.If> by
         (
             -IF * -LPAR * expr * -RPAR * -LBRC *
-                parser { statement } * -RBRC *
-                -ELSE * -LBRC * parser { statement } * -RBRC
+                parser { statementsChain } * -RBRC *
+                -ELSE * -LBRC * parser { statementsChain } * -RBRC
             ).map { (condition, then, otherwise) ->
             Expression.If(
                 condition = condition,

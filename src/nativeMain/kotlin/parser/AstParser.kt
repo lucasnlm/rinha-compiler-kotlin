@@ -187,8 +187,8 @@ object AstParser {
 
         return Expression.If(
             condition = condition,
-            then = then,
-            otherwise = otherwise,
+            then = listOf(then),
+            otherwise = listOf(otherwise),
         )
     }
 

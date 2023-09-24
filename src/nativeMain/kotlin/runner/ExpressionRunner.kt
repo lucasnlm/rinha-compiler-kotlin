@@ -346,9 +346,13 @@ class ExpressionRunner(
     ): Any? {
         val result = condition.runExpression(context)
         return if (result == true) {
-            then.runExpression(context)
+            then.fold<Expression, Any?>(null) { _, expression ->
+                expression.runExpression(context)
+            }
         } else {
-            otherwise.runExpression(context)
+            otherwise.fold<Expression, Any?>(null) { _, expression ->
+                expression.runExpression(context)
+            }
         }
     }
 
@@ -557,11 +561,15 @@ class ExpressionRunner(
             }
             count += right.findCalls(callerName)
         } else if (this is Expression.If) {
-            count += then.findCalls(callerName)
+            count += then.sumOf {
+                it.findCalls(callerName)
+            }
             if (count > 1) {
                 return count
             }
-            count += otherwise.findCalls(callerName)
+            count += otherwise.sumOf {
+                it.findCalls(callerName)
+            }
         }
         return count
     }

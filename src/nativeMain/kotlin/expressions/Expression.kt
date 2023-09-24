@@ -40,8 +40,8 @@ sealed class Expression {
      */
     data class If(
         val condition: Expression,
-        val then: Expression,
-        val otherwise: Expression,
+        val then: List<Expression>,
+        val otherwise: List<Expression>,
     ) : Expression()
 
     /**

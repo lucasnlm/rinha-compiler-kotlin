@@ -5,11 +5,6 @@ package expressions
  */
 sealed class Expression {
     /**
-     * Represents the root expression in the AST.
-     */
-    data object Root : Expression()
-
-    /**
      * Represents a let expression in the AST.
      * @property name The name of the variable.
      * @property value The value of the variable.
@@ -24,16 +19,16 @@ sealed class Expression {
      * @property name The name of the function.
      * @property parameters The parameters of the function.
      * @property value The value of the function.
+     * @property scopeCopy The scope copy of the function.
      */
     data class Function(
         val name: String? = null,
         val parameters: List<String>,
         val value: List<Expression>,
+        val scopeCopy: Map<String, Any?> = mapOf(),
     ) : Expression() {
         override fun toString(): String {
-            val fnName = name ?: "fn"
-            val params = parameters.joinToString(", ")
-            return "$fnName($params) {...}"
+            return "<#closure>"
         }
     }
 
@@ -45,8 +40,8 @@ sealed class Expression {
      */
     data class If(
         val condition: Expression,
-        val then: List<Expression>,
-        val otherwise: List<Expression>? = null,
+        val then: Expression,
+        val otherwise: Expression,
     ) : Expression()
 
     /**
@@ -108,7 +103,7 @@ sealed class Expression {
      * @property value The value of the first expression in a tuple.
      */
     data class First(
-        val value: Expression,
+        val value: List<Expression>,
     ) : Expression()
 
     /**
@@ -116,7 +111,7 @@ sealed class Expression {
      * @property value The value of the second expression in a tuple.
      */
     data class Second(
-        val value: Expression,
+        val value: List<Expression>,
     ) : Expression()
 
     /**
@@ -133,6 +128,6 @@ sealed class Expression {
      * Represents a print expression in the AST.
      */
     data class Print(
-        val value: Expression,
+        val value: List<Expression>,
     ) : Expression()
 }

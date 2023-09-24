@@ -14,7 +14,15 @@ internal object JsonObjectExt {
      * Get a [JsonObject] from [key].
      * @return The [JsonObject] or null if the key does not exist.
      */
-    fun JsonObject.obj(key: String): JsonObject? {
+    fun JsonObject.obj(key: String): JsonObject {
+        return get(key)?.jsonObject ?: throw AstParseException("can't find '$key'")
+    }
+
+    /**
+     * Get a [JsonObject] from [key].
+     * @return The [JsonObject] or null if the key does not exist.
+     */
+    fun JsonObject.objOrNull(key: String): JsonObject? {
         return get(key)?.jsonObject
     }
 
@@ -30,7 +38,7 @@ internal object JsonObjectExt {
      * Get a [String] from [key].
      * @return The [String] or null if the key does not exist.
      */
-    fun JsonObject.value(key: String): String? {
-        return get(key)?.jsonPrimitive?.content
+    fun JsonObject.value(key: String): String {
+        return get(key)?.jsonPrimitive?.content ?: throw AstParseException("can't find '$key'")
     }
 }

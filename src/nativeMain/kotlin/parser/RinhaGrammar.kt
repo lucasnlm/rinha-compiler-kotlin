@@ -11,12 +11,14 @@ import com.github.h0tk3y.betterParse.combinators.times
 import com.github.h0tk3y.betterParse.combinators.unaryMinus
 import com.github.h0tk3y.betterParse.combinators.use
 import com.github.h0tk3y.betterParse.grammar.Grammar
+import com.github.h0tk3y.betterParse.grammar.parseToEnd
 import com.github.h0tk3y.betterParse.grammar.parser
 import com.github.h0tk3y.betterParse.lexer.literalToken
 import com.github.h0tk3y.betterParse.lexer.regexToken
 import com.github.h0tk3y.betterParse.parser.Parser
 import expressions.BinaryOperator
 import expressions.Expression
+import okio.Source
 
 /**
  * Represents the grammar of the Rinha language.
@@ -33,12 +35,16 @@ object RinhaGrammar : Grammar<List<Expression>>() {
     private val LBRC by literalToken("{")
     private val RBRC by literalToken("}")
 
-    private val LET by literalToken("let")
-    private val FIRST by literalToken("first")
-    private val SECOND by literalToken("second")
-    private val PRINT by literalToken("print")
+    private val LINE_COMMENT = "//.*".toRegex()
+    private val MULTI_LINE_COMMENT = "/\\*(.|\\n)*?\\*/".toRegex()
 
-    private val FUN by literalToken("fn")
+    private val LET by regexToken("let\\b")
+
+    private const val RESERVED_FN_PRINT = "print"
+    private const val RESERVED_FN_FIRST = "first"
+    private const val RESERVED_FN_SECOND = "second"
+
+    private val FUN by regexToken("fn\\b")
     private val FUN_ARROW by literalToken("=>")
 
     private val PLUS by literalToken("+")
@@ -69,7 +75,7 @@ object RinhaGrammar : Grammar<List<Expression>>() {
     private val CHARLIT by regexToken("'.'")
     private val STRINGLIT by regexToken("\".*?\"")
 
-    private val ID by regexToken("[A-Za-z]\\w*")
+    private val ID by regexToken("[A-Za-z_]\\w*")
 
     private val WS by regexToken("\\s+", ignore = true)
     private val NEWLINE by regexToken("[\r\n]+", ignore = true)
@@ -107,12 +113,25 @@ object RinhaGrammar : Grammar<List<Expression>>() {
             (FALSE asJust Expression.BoolValue(value = false))
 
     /** Handle function calls. E.g: foo(), bar(1, 2). */
-    private val funCall: Parser<Expression.Call> by
-        (ID * -LPAR * separatedTerms(parser(this::expr), COMMA, acceptZero = true) * -RPAR).map { (name, args) ->
-            Expression.Call(
-                callee = Expression.Var(name.text),
-                arguments = args,
-            )
+    private val funCall: Parser<Expression> by
+        (ID * -LPAR * separatedTerms(parser { statement }, COMMA, acceptZero = true) * -RPAR).map { (name, args) ->
+            when (name.text) {
+                RESERVED_FN_PRINT -> {
+                    Expression.Print(value = args)
+                }
+                RESERVED_FN_FIRST -> {
+                    Expression.First(value = args)
+                }
+                RESERVED_FN_SECOND -> {
+                    Expression.Second(value = args)
+                }
+                else -> {
+                    Expression.Call(
+                        callee = Expression.Var(name.text),
+                        arguments = args,
+                    )
+                }
+            }
         }
 
     /** Handle variables. E.g: foo, bar. Or any other name not reserved. */
@@ -125,20 +144,8 @@ object RinhaGrammar : Grammar<List<Expression>>() {
 
     /** Handle tuple literals. E.g: (1, 2), (foo, bar). */
     private val tupleLiteral: Parser<Expression.TupleValue> by
-        (-LPAR * parser(this::expr) * -COMMA * parser(this::expr) * -RPAR).map { (first, second) ->
+        (-LPAR * parser { statement } * -COMMA * parser { statement } * -RPAR).map { (first, second) ->
             Expression.TupleValue(first = first, second = second)
-        }
-
-    /** Handle first statements (used by tuples). E.g: first((1,2)), first(foo). */
-    private val firstStatement: Parser<Expression.First> by
-        (-FIRST * -LPAR * parser { statement } * -RPAR).map {
-            Expression.First(value = it)
-        }
-
-    /** Handle second statements (used by tuples). E.g: second((1,2)), second(foo). */
-    private val secondStatement: Parser<Expression.Second> by
-        (-SECOND * -LPAR * parser { statement } * -RPAR).map {
-            Expression.Second(value = it)
         }
 
     /** Handle parenthesized terms. E.g: (1), (foo). */
@@ -149,7 +156,7 @@ object RinhaGrammar : Grammar<List<Expression>>() {
      * This is helper to join all the terms together.
      **/
     private val nonIndexedTerm: Parser<Expression> by
-        const or funCall or variable or parenTerm or stringLiteral or tupleLiteral or firstStatement or secondStatement
+        const or funCall or variable or parenTerm or stringLiteral or tupleLiteral
 
     /** In my case I can simplify term = nonIndexedTerm. */
     private val term = nonIndexedTerm
@@ -187,11 +194,13 @@ object RinhaGrammar : Grammar<List<Expression>>() {
     private val comparisonOperator by EQU or NEQ or LT or GT or LEQ or GEQ
     private val comparisonOrMath: Parser<Expression> by (math * optional(comparisonOperator * math))
         .map { (left, tail) ->
-            tail?.let { (operator, right) -> Expression.Binary(
-                left = left,
-                right = right,
-                operator = signToKind[operator.type]!!
-            ) } ?: left
+            tail?.let { (operator, right) ->
+                Expression.Binary(
+                    left = left,
+                    right = right,
+                    operator = signToKind[operator.type]!!,
+                )
+            } ?: left
         }
 
     /** Handle AND operators. E.g: 1 && 2. */
@@ -222,8 +231,8 @@ object RinhaGrammar : Grammar<List<Expression>>() {
     private val ifStatement: Parser<Expression.If> by
         (
             -IF * -LPAR * expr * -RPAR * -LBRC *
-                parser { statementsChain } * -RBRC *
-                optional(-ELSE * -LBRC * parser { statementsChain } * -RBRC)
+                parser { statement } * -RBRC *
+                -ELSE * -LBRC * parser { statement } * -RBRC
             ).map { (condition, then, otherwise) ->
             Expression.If(
                 condition = condition,
@@ -265,23 +274,11 @@ object RinhaGrammar : Grammar<List<Expression>>() {
         }
 
     /**
-     * Handle print statements.
-     * E.g: print("hello"), print(foo), print((1, 2)), print(first(bar)).
-     */
-    private val printStatement: Parser<Expression.Print> by
-        (-PRINT * -LPAR * expr * -RPAR).map {
-            Expression.Print(value = it)
-        }
-
-    /**
      * Join all the valid statements together.
      */
     private val statement: Parser<Expression> by
         functionDefinitionStatement or
             assignmentStatement or
-            firstStatement or
-            secondStatement or
-            printStatement or
             ifStatement or
             expr
 
@@ -297,4 +294,13 @@ object RinhaGrammar : Grammar<List<Expression>>() {
      * This is the "entry point"
      */
     override val rootParser: Parser<List<Expression>> by oneOrMore(statement)
+
+    /**
+     * Parse a [Source] and return a list of [Expression]s.
+     */
+    fun parseSource(source: String): List<Expression> {
+        return source.replace(MULTI_LINE_COMMENT, "")
+            .replace(LINE_COMMENT, "")
+            .let(::parseToEnd)
+    }
 }

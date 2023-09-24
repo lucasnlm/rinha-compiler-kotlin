@@ -46,13 +46,13 @@ class RinhaGrammarTest {
                 name = "i",
                 value = Expression.If(
                     Expression.BoolValue(true),
-                    listOf(Expression.IntValue(1)),
-                    listOf(Expression.IntValue(2)),
+                    Expression.IntValue(1),
+                    Expression.IntValue(2),
                 ),
             ),
-            "let j = if (false) { 2 }" to Expression.Let(
+            "let j = if (false) { 2 } else { 3 }" to Expression.Let(
                 name = "j",
-                value = Expression.If(Expression.BoolValue(false), listOf(Expression.IntValue(2))),
+                value = Expression.If(Expression.BoolValue(false), Expression.IntValue(2), Expression.IntValue(3)),
             ),
             "let k = fn (n) => { n }" to Expression.Let(
                 name = "k",
@@ -71,30 +71,29 @@ class RinhaGrammarTest {
     @Test
     fun `test IF parsing`() {
         mapOf(
-            "if (true) { 1 }" to
-                Expression.If(Expression.BoolValue(true), listOf(Expression.IntValue(1))),
             "if (true) { 1 } else { 0 }" to
                 Expression.If(
                     Expression.BoolValue(true),
-                    listOf(Expression.IntValue(1)),
-                    listOf(Expression.IntValue(0)),
+                    Expression.IntValue(1),
+                    Expression.IntValue(0),
                 ),
-            "if (x) { \"a\" }" to
-                Expression.If(Expression.Var("x"), listOf(Expression.StrValue("a"))),
-            "if (true || false) { x }" to
+            "if (x) { \"a\" } else { \"b\" }" to
+                Expression.If(Expression.Var("x"), Expression.StrValue("a"), Expression.StrValue("b")),
+            "if (true || false) { x } else { y }" to
                 Expression.If(
                     Expression.Binary(
                         Expression.BoolValue(true),
                         Expression.BoolValue(false),
                         BinaryOperator.Or,
                     ),
-                    listOf(Expression.Var("x")),
+                    Expression.Var("x"),
+                    Expression.Var("y"),
                 ),
             "if (foo(10)) { 1 } else { 2 }" to
                 Expression.If(
                     Expression.Call(Expression.Var("foo"), listOf(Expression.IntValue(10))),
-                    listOf(Expression.IntValue(1)),
-                    listOf(Expression.IntValue(2)),
+                    Expression.IntValue(1),
+                    Expression.IntValue(2),
                 ),
         ).forEach {
             val result = RinhaGrammar.parseToEnd(it.key).firstOrNull()
@@ -126,8 +125,8 @@ class RinhaGrammarTest {
                     listOf(
                         Expression.If(
                             Expression.Var("x"),
-                            listOf(Expression.IntValue(1)),
-                            listOf(Expression.IntValue(2)),
+                            Expression.IntValue(1),
+                            Expression.IntValue(2),
                         ),
                     ),
                 ),
@@ -142,16 +141,17 @@ class RinhaGrammarTest {
         mapOf(
             "(10, 20)" to Expression.TupleValue(Expression.IntValue(10), Expression.IntValue(20)),
             "first((1,2))" to Expression.First(
-                Expression.TupleValue(Expression.IntValue(1), Expression.IntValue(2)),
+                listOf(Expression.TupleValue(Expression.IntValue(1), Expression.IntValue(2))),
             ),
             "first(someVar)" to Expression.First(
-                Expression.Var("someVar"),
+                listOf(Expression.Var("someVar")),
+
             ),
             "second((1,2))" to Expression.Second(
-                Expression.TupleValue(Expression.IntValue(1), Expression.IntValue(2)),
+                listOf(Expression.TupleValue(Expression.IntValue(1), Expression.IntValue(2))),
             ),
             "second(someVar)" to Expression.Second(
-                Expression.Var("someVar"),
+                listOf(Expression.Var("someVar")),
             ),
             "(10, false)" to Expression.TupleValue(Expression.IntValue(10), Expression.BoolValue(false)),
             "(false, true)" to Expression.TupleValue(Expression.BoolValue(false), Expression.BoolValue(true)),
@@ -268,18 +268,18 @@ class RinhaGrammarTest {
     @Test
     fun `test print parsing`() {
         mapOf(
-            "print(1)" to Expression.Print(Expression.IntValue(1)),
-            "print(\"value\")" to Expression.Print(Expression.StrValue("value")),
-            "print(true)" to Expression.Print(Expression.BoolValue(true)),
-            "print(false)" to Expression.Print(Expression.BoolValue(false)),
-            "print((10, 20))" to Expression.Print(Expression.TupleValue(Expression.IntValue(10), Expression.IntValue(20))),
-            "print((10, false))" to Expression.Print(Expression.TupleValue(Expression.IntValue(10), Expression.BoolValue(false))),
-            "print((false, true))" to Expression.Print(Expression.TupleValue(Expression.BoolValue(false), Expression.BoolValue(true))),
-            "print((\"B\", \"A\"))" to Expression.Print(Expression.TupleValue(Expression.StrValue("B"), Expression.StrValue("A"))),
-            "print((\"B\", 10))" to Expression.Print(Expression.TupleValue(Expression.StrValue("B"), Expression.IntValue(10))),
-            "print((10, \"B\"))" to Expression.Print(Expression.TupleValue(Expression.IntValue(10), Expression.StrValue("B"))),
-            "print((10, (20, 30)))" to Expression.Print(Expression.TupleValue(Expression.IntValue(10), Expression.TupleValue(Expression.IntValue(20), Expression.IntValue(30)))),
-            "print(\"value is\" + 10)" to Expression.Print(Expression.Binary(Expression.StrValue("value is"), Expression.IntValue(10), BinaryOperator.Add)),
+            "print(1)" to Expression.Print(listOf(Expression.IntValue(1))),
+            "print(\"value\")" to Expression.Print(listOf(Expression.StrValue("value"))),
+            "print(true)" to Expression.Print(listOf(Expression.BoolValue(true))),
+            "print(false)" to Expression.Print(listOf(Expression.BoolValue(false))),
+            "print((10, 20))" to Expression.Print(listOf(Expression.TupleValue(Expression.IntValue(10), Expression.IntValue(20)))),
+            "print((10, false))" to Expression.Print(listOf(Expression.TupleValue(Expression.IntValue(10), Expression.BoolValue(false)))),
+            "print((false, true))" to Expression.Print(listOf(Expression.TupleValue(Expression.BoolValue(false), Expression.BoolValue(true)))),
+            "print((\"B\", \"A\"))" to Expression.Print(listOf(Expression.TupleValue(Expression.StrValue("B"), Expression.StrValue("A")))),
+            "print((\"B\", 10))" to Expression.Print(listOf(Expression.TupleValue(Expression.StrValue("B"), Expression.IntValue(10)))),
+            "print((10, \"B\"))" to Expression.Print(listOf(Expression.TupleValue(Expression.IntValue(10), Expression.StrValue("B")))),
+            "print((10, (20, 30)))" to Expression.Print(listOf(Expression.TupleValue(Expression.IntValue(10), Expression.TupleValue(Expression.IntValue(20), Expression.IntValue(30))))),
+            "print(\"value is\" + 10)" to Expression.Print(listOf(Expression.Binary(Expression.StrValue("value is"), Expression.IntValue(10), BinaryOperator.Add))),
         ).forEach {
             val result = RinhaGrammar.parseToEnd(it.key).firstOrNull()
             assertEquals(it.value, result)

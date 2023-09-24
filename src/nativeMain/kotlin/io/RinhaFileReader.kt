@@ -1,14 +1,12 @@
 package io
 
 import okio.FileSystem
-import okio.Path.Companion.toPath
-import okio.buffer
-import okio.use
+import okio.IOException
 
 /**
- * Represents a file reader.
+ * Represents a Rinha file reader.
  */
-object FileReader {
+object RinhaFileReader {
     /**
      * Read file content from [filePath].
      * @param filePath The path of the file to read.
@@ -19,13 +17,13 @@ object FileReader {
         filePath: String,
         fileSystem: FileSystem = FileSystem.SYSTEM,
     ): Result<String> {
-        val path = filePath.toPath(true)
-        return runCatching {
-            fileSystem.source(path).use { source ->
-                source.buffer().use { buffer ->
-                    buffer.readUtf8()
+        return FileReader.readFile(filePath, fileSystem)
+            .onFailure {
+                throw IOException("can't read file '$filePath'")
+            }.onSuccess {
+                if (it.isBlank()) {
+                    throw IOException("file '$filePath' has no code, it's empty")
                 }
             }
-        }
     }
 }

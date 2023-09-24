@@ -1,6 +1,5 @@
 package runner
 
-import com.github.h0tk3y.betterParse.grammar.parseToEnd
 import expressions.Expression
 import mocks.AstHelper
 import mocks.HardcodedScripts
@@ -9,6 +8,7 @@ import platform.posix.NAN
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -32,10 +32,10 @@ class ExpressionRunnerTest {
     @Test
     fun `test basic math script`() {
         testScript(
-            ast = HardcodedScripts.testMathAst,
+            ast = HardcodedScripts.testMathSourceAst,
             source = HardcodedScripts.testMathSource,
         ) {
-            assertEquals(27, variables.size)
+            assertEquals(26, variables.size)
             assertEquals(30, variables["t_add"])
             assertEquals(-5, variables["t_sub"])
             assertEquals(6, variables["t_mul"])
@@ -51,7 +51,6 @@ class ExpressionRunnerTest {
             assertEquals("ab", variables["t_str_add_1"])
             assertEquals("a1", variables["t_str_add_2"])
             assertEquals("1a", variables["t_str_add_3"])
-            assertEquals("anull", variables["t_str_add_4"])
             assertTrue(variables["t_lt"] as Boolean)
             assertTrue(variables["t_lte"] as Boolean)
             assertFalse(variables["t_lt_false"] as Boolean)
@@ -110,7 +109,39 @@ class ExpressionRunnerTest {
     }
 
     @Test
-    fun `test fib script`() {
+    fun `test fib script - runtimeOptimization off`() {
+        testScript(
+            ast = HardcodedScripts.fibAst,
+            source = HardcodedScripts.fibSource,
+            runtimeOptimization = false,
+        ) {
+            assertEquals(1, variables.size)
+            assertEquals(1, output.size)
+            assertTrue {
+                variables["fib"] is Expression.Function
+            }
+            assertEquals("55", output.first())
+        }
+    }
+
+    @Test
+    fun `test fib script break - runtimeOptimization off`() {
+        runCatching {
+            testScript(
+                source = HardcodedScripts.fibBreakSource,
+                runtimeOptimization = false,
+            ) {
+                // It will b
+            }
+        }.onFailure {
+            assertEquals("recursive call limit exceeded", it.message)
+        }.onSuccess {
+            assertFalse(true)
+        }
+    }
+
+    @Test
+    fun `test fib script - runtimeOptimization on`() {
         testScript(
             ast = HardcodedScripts.fibAst,
             source = HardcodedScripts.fibSource,
@@ -121,6 +152,32 @@ class ExpressionRunnerTest {
                 variables["fib"] is Expression.Function
             }
             assertEquals("55", output.first())
+        }
+    }
+
+    @Test
+    fun `test custom sum script`() {
+        testScript(
+            ast = HardcodedScripts.sumCustomSourceAst,
+            source = HardcodedScripts.sumCustomSource,
+            runtimeOptimization = false,
+        ) {
+            assertEquals(1, variables.size)
+            assertEquals(1, output.size)
+            assertEquals("500500", output.first())
+        }
+    }
+
+    @Test
+    fun `test custom sum with multiplication script`() {
+        testScript(
+            ast = HardcodedScripts.sumMulSourceAst,
+            source = HardcodedScripts.sumMulSource,
+            runtimeOptimization = false,
+        ) {
+            assertEquals(1, variables.size)
+            assertEquals(1, output.size)
+            assertEquals("2036", output.first())
         }
     }
 
@@ -139,31 +196,179 @@ class ExpressionRunnerTest {
         }
     }
 
-    private fun testScript(ast: String, source: String, block: RunTimeContext.() -> Unit) {
-        testScriptFromAst(ast) {
-            block(this)
+    @Test
+    fun `test print returns - with let`() {
+        testScript(
+            ast = HardcodedScripts.printReturnSource1Ast,
+            source = HardcodedScripts.printReturnSouce1,
+        ) {
+            assertNull(variables["_"])
+            assertTrue(variables.isEmpty())
+            assertEquals(2, output.size)
+            assertEquals("1", output[0])
+            assertEquals("2", output[1])
         }
-        testScriptFromSource(source) {
-            block(this)
+    }
+
+    @Test
+    fun `test print returns - with fn`() {
+        testScript(
+            ast = HardcodedScripts.printReturnSource2Ast,
+            source = HardcodedScripts.printReturnSouce2,
+        ) {
+            assertNotNull(variables["f"])
+            assertEquals(3, output.size)
+            assertEquals("1", output[0])
+            assertEquals("2", output[1])
+            assertEquals("3", output[2])
+        }
+    }
+
+    @Test
+    fun `test print returns - print of prints`() {
+        testScript(
+            ast = HardcodedScripts.printReturnSource3Ast,
+            source = HardcodedScripts.printReturnSource3,
+        ) {
+            assertTrue(variables.isEmpty())
+            assertEquals(3, output.size)
+            assertEquals("1", output[0])
+            assertEquals("2", output[1])
+            assertEquals("3", output[2])
+        }
+    }
+
+    @Test
+    fun `test print returns - tuple`() {
+        testScript(
+            ast = HardcodedScripts.printReturnSource4Ast,
+            source = HardcodedScripts.printReturnSource4,
+        ) {
+            assertNotNull(variables["tuple"])
+            assertEquals(3, output.size)
+            assertEquals("1", output[0])
+            assertEquals("2", output[1])
+            assertEquals("(1, 2)", output[2])
+        }
+    }
+
+    @Test
+    fun `test immutability`() {
+        testScript(
+            ast = HardcodedScripts.immutabilitySourceAst,
+            source = HardcodedScripts.immutabilitySource,
+        ) {
+            assertEquals(2, variables["x"])
+            assertEquals(1, variables["result1"])
+            assertEquals(2, variables["result2"])
+        }
+    }
+
+    @Test
+    fun `test increment`() {
+        testScript(
+            ast = HardcodedScripts.incrementSourceAst,
+            source = HardcodedScripts.incrementSource,
+        ) {
+            assertEquals(1, output.size)
+            assertEquals("2", output.first())
+        }
+    }
+
+    @Test
+    fun `test multiInternalFunctionsSource`() {
+        testScript(
+            ast = HardcodedScripts.multiInternalFunctionsSourceAst,
+            source = HardcodedScripts.multiInternalFunctionsSource,
+        ) {
+            assertEquals(1, output.size)
+            assertEquals("10", output.first())
+        }
+    }
+
+    @Test
+    fun `test comments`() {
+        testScript(
+            source = HardcodedScripts.commentsSource,
+        ) {
+            assertEquals(1, variables["x"])
+            assertNull(variables["y"])
+            assertEquals(10, variables["z"])
+            assertEquals(5, variables["w"])
+        }
+    }
+
+    @Test
+    fun `test function scope inside function`() {
+        testScript(
+            source = HardcodedScripts.functionScopeSource,
+        ) {
+            assertEquals(1, variables["result"])
+        }
+    }
+
+    @Test
+    fun `test fibtail source`() {
+        testScript(
+            ast = HardcodedScripts.fibtailSourceAst,
+            source = HardcodedScripts.fibtailSource,
+        ) {
+            assertEquals("873876091", output.first())
+        }
+    }
+
+    @Test
+    fun `test resStringSource source`() {
+        testScript(
+            ast = HardcodedScripts.resStringSourceAst,
+            source = HardcodedScripts.resStringSource,
+        ) {
+            assertEquals("54321", output.first())
+        }
+    }
+
+    private fun testScript(
+        ast: String? = null,
+        source: String? = null,
+        runtimeOptimization: Boolean = true,
+        block: RunTimeContext.() -> Unit,
+    ) {
+        ast?.let {
+            testScriptFromAst(ast) {
+                block(this)
+            }
+        }
+
+        source?.let {
+            testScriptFromSource(runtimeOptimization, source) {
+                block(this)
+            }
         }
     }
 
     private fun testScriptFromAst(target: String, block: RunTimeContext.() -> Unit) {
         val result = AstHelper.mockAst(content = target).getOrThrow()
         val runner = ExpressionRunner(
-            context = RunTimeContext(isTesting = true),
+            runtimeContext = RunTimeContext(isTesting = true),
         )
-        runner.run(result.expressions)
-        block(runner.context)
+        runner.runFromExpressions(result)
+        block(runner.runtimeContext)
     }
 
-    private fun testScriptFromSource(source: String, block: RunTimeContext.() -> Unit) {
-        val result = RinhaGrammar.parseToEnd(source)
+    private fun testScriptFromSource(
+        runtimeOptimization: Boolean = true,
+        source: String,
+        block: RunTimeContext.() -> Unit,
+    ) {
+        val result = RinhaGrammar.parseSource(source)
         val runner = ExpressionRunner(
-            context = RunTimeContext(isTesting = true),
+            runtimeContext = RunTimeContext(
+                isTesting = true,
+                runtimeOptimization = runtimeOptimization,
+            ),
         )
 
-        runner.run(result)
-        block(runner.context)
+        runner.runFromExpressions(result)
+        block(runner.runtimeContext)
     }
 }

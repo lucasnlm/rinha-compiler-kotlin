@@ -1,16 +1,15 @@
-package ast
+package io
 
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import parser.JsonParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class JsonParserTest {
+class JsonFileReaderTest {
     @Test
     fun `parse valid json`() {
         val originalJson = """
@@ -23,7 +22,7 @@ class JsonParserTest {
             }
         """.trimIndent()
 
-        val parsedJson = JsonParser.parse(originalJson)
+        val parsedJson = JsonFileReader.parse(originalJson).getOrThrow()
 
         assertNotNull(parsedJson)
         assertEquals(3, parsedJson.keys.size)
@@ -41,7 +40,7 @@ class JsonParserTest {
             }
         """.trimIndent()
 
-        val parsedJson = JsonParser.parse(originalJson)
+        val parsedJson = JsonFileReader.parse(originalJson).getOrNull()
 
         assertNull(parsedJson)
     }

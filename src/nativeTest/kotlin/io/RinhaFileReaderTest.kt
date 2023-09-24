@@ -1,35 +1,38 @@
 package io
 
+import mocks.HardcodedScripts
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-class FileReaderTest {
+class RinhaFileReaderTest {
     private val userHome = "/Users/user".toPath()
-    private val testJson = userHome / "test.json"
+    private val testRinha = userHome / "test.rinha"
 
     private val fileSystem = FakeFileSystem().apply {
         createDirectories(userHome)
-        write(testJson) { writeUtf8("{\"too\": 123}") }
+        write(testRinha) { writeUtf8(HardcodedScripts.sumSource) }
     }
 
     @Test
     fun `readFile - returns content when file exists`() {
-        val fileContents = FileReader.readFile(
-            filePath = "/Users/user/test.json",
+        val fileContents = RinhaFileReader.readFile(
+            filePath = "/Users/user/test.rinha",
             fileSystem = fileSystem,
         )
-        assertEquals("{\"too\": 123}", fileContents.getOrNull())
+        assertEquals(HardcodedScripts.sumSource, fileContents.getOrNull())
     }
 
     @Test
     fun `readFile - returns null when file do not exist`() {
-        val fileContents = FileReader.readFile(
-            filePath = "/Users/user/non-existent.json",
-            fileSystem = fileSystem,
-        )
+        val fileContents = runCatching {
+            RinhaFileReader.readFile(
+                filePath = "/Users/user/non-existent.rinha",
+                fileSystem = fileSystem,
+            )
+        }
         assertNull(fileContents.getOrNull())
     }
 }

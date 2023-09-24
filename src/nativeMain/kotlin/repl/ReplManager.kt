@@ -8,14 +8,15 @@ import runner.RunTimeContext
  */
 object ReplManager {
     fun run() {
-        println("Kotlin Rinha Interpreter")
-        println("------------------------")
-        println("  Type '!q' to exit.")
-        println("  Type '!s' to see the variable scope.")
-        println()
+        """
+        Kotlin Rinha Interpreter
+        ------------------------
+          '!q' to exit.
+          '!s' to see the variable scope.
+        """.trimIndent().let(::println)
 
         val runner = ExpressionRunner(
-            context = RunTimeContext(),
+            runtimeContext = RunTimeContext(),
         )
 
         while (true) {
@@ -26,6 +27,9 @@ object ReplManager {
             val input = readlnOrNull()?.trim() ?: break
 
             when {
+                input.isEmpty() -> {
+                    continue
+                }
                 SCOPE_PARAMS.contains(input) -> {
                     runner.printGlobalScope()
                     continue
@@ -35,7 +39,13 @@ object ReplManager {
                     break
                 }
                 else -> {
-                    runner.runFromSource(input)
+                    runCatching {
+                        runner.run {
+                            runFromSource(input)
+                        }
+                    }.onFailure {
+                        println("e: ${it.message}")
+                    }
                 }
             }
         }

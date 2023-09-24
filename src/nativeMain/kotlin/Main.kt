@@ -17,7 +17,7 @@ fun main(originalArguments: Array<String> = arrayOf()) {
 }
 
 fun showHelp() {
-    val help = """
+    """
     Kotlin Rinha Interpreter
       Usage: rinhak [options] [source file]
       Options:
@@ -25,8 +25,7 @@ fun showHelp() {
           repl          Run the REPL.
           <file.json>   Run from AST file. E.g: rinhak test.json
           <file.rinha>  Run from Rinha file. E.g: rinhak test.rinha
-    """.trimIndent()
-    println(help)
+    """.trimIndent().let(::println)
 }
 
 fun runRepl() {

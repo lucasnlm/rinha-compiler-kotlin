@@ -1,15 +1,13 @@
 package runner
 
-import com.github.h0tk3y.betterParse.grammar.parseToEnd
 import com.github.h0tk3y.betterParse.parser.ParseException
 import expressions.BinaryOperator
 import expressions.Expression
 import parser.RinhaGrammar
-import platform.posix.FP_NAN
 import platform.posix.NAN
 
 class ExpressionRunner(
-    val context: RunTimeContext = RunTimeContext(),
+    val runtimeContext: RunTimeContext = RunTimeContext(),
 ) {
     /**
      * Run the expressions from a Rinha source code.
@@ -18,16 +16,16 @@ class ExpressionRunner(
      */
     fun runFromSource(source: String): Any? {
         return runCatching {
-            RinhaGrammar.parseToEnd(source)
+            RinhaGrammar.parseSource(source)
         }.onFailure {
             if (it is ParseException) {
-                println("e: Syntax error")
+                println("e: syntax error")
             } else {
                 println("e: ${it.message}")
             }
         }.onSuccess { expressions ->
-            run(expressions)?.also { response ->
-                val last = context.output.lastOrNull()
+            runFromExpressions(expressions)?.also { response ->
+                val last = runtimeContext.output.lastOrNull()
                 if (last == null || last != response.toString()) {
                     println(response.toString())
                 }
@@ -41,16 +39,19 @@ class ExpressionRunner(
      * @throws RuntimeException If any expression fails.
      * @return The result of the last expression.
      */
-    fun run(expressions: List<Expression>): Any? {
+    fun runFromExpressions(expressions: List<Expression>): Any? {
         if (expressions.isEmpty()) {
-            throw RuntimeException("No expressions to run")
+            throw RuntimeException("no expressions to run")
         }
 
+        val context = FunctionContext(
+            scope = runtimeContext.variables,
+            root = null,
+            recursiveCall = 0,
+        )
+
         return expressions.fold<Expression, Any?>(null) { _, expression ->
-            runExpression(
-                expression = expression,
-                scope = context.variables,
-            )
+            expression.runExpression(context)
         }
     }
 
@@ -58,314 +59,514 @@ class ExpressionRunner(
      * Clear the output.
      */
     fun clearOutput() {
-        context.output.clear()
+        runtimeContext.output.clear()
     }
 
     /**
      * Print the global scope.
      */
     fun printGlobalScope() {
-        if (context.variables.isEmpty()) {
+        if (runtimeContext.variables.isEmpty()) {
             println("{}")
         } else {
-            println("{")
-            context.variables.forEach {
+            runtimeContext.variables.map {
                 when (it.value) {
                     is Int -> {
                         val variable = it.value as Int
-                        println("  ${it.key}: $variable,")
+                        "${it.key}: $variable"
                     }
+
                     is String -> {
                         val variable = it.value as String
-                        println("  ${it.key}: \"$variable\",")
+                        "${it.key}: \"$variable\""
                     }
+
                     is Boolean -> {
                         val variable = it.value as Boolean
-                        println("  ${it.key}: $variable,")
+                        "${it.key}: $variable"
                     }
+
                     is Expression.Function -> {
                         val variable = it.value as Expression.Function
-                        println("  ${it.key}: $variable,")
+                        "${it.key}: $variable"
                     }
+
                     else -> {
                         if (it.value == null) {
-                            println("  ${it.key}: null,")
+                            "${it.key}: null"
                         } else {
-                            println("  ${it.key}: Any,")
+                            "${it.key}: Any"
                         }
                     }
                 }
+            }.joinToString(prefix = "{\n", separator = ",\n", postfix = ",\n}") {
+                "  $it"
+            }.also {
+                if (!runtimeContext.isTesting && it.isNotBlank()) {
+                    println(it)
+                }
             }
-            println("}")
         }
     }
 
-    private fun runExpression(
-        expression: Expression,
-        scope: MutableMap<String, Any?>,
+    private fun Expression.runExpression(
+        context: FunctionContext,
     ): Any? {
-        return when (expression) {
-            is Expression.Root -> null
-            is Expression.Let -> letExpression(expression, scope)
-            is Expression.Function -> functionExpression(expression)
-            is Expression.Print -> printExpression(expression, scope)
-            is Expression.Call -> callExpression(expression, scope)
-            is Expression.IntValue -> intValueExpression(expression)
-            is Expression.BoolValue -> boolValueExpression(expression)
-            is Expression.TupleValue -> tupleValueExpression(expression, scope)
-            is Expression.StrValue -> strValueExpression(expression)
-            is Expression.First -> firstExpression(expression, scope)
-            is Expression.Second -> secondExpression(expression, scope)
-            is Expression.If -> ifExpression(expression, scope)
-            is Expression.Binary -> binaryExpression(expression, scope)
-            is Expression.Var -> varExpression(expression, scope)
+        return when (this) {
+            is Expression.Var -> getVariableValue(context)
+            is Expression.IntValue -> getIntValue()
+            is Expression.BoolValue -> getBoolValue()
+            is Expression.StrValue -> getStringValue()
+            is Expression.Let -> defineExpression(context)
+            is Expression.Binary -> processOperation(context)
+            is Expression.If -> ifExpression(context)
+            is Expression.Function -> defineFunction(context)
+            is Expression.Call -> callFunction(context)
+            is Expression.TupleValue -> createTuple(context)
+            is Expression.First -> first(context)
+            is Expression.Second -> second(context)
+            is Expression.Print -> printExpr(context)
         }
     }
 
-    private fun varExpression(
-        expression: Expression.Var,
-        scope: MutableMap<String, Any?>,
-    ): Any? {
-        return scope[expression.name] ?: context.variables[expression.name]
-    }
-
-    private fun binaryExpression(
-        expression: Expression.Binary,
-        scope: MutableMap<String, Any?>,
+    private fun Expression.Var.getVariableValue(
+        context: FunctionContext,
     ): Any {
-        val left = runExpression(expression.left, scope)
-        val right = runExpression(expression.right, scope)
-        return when (expression.operator) {
-            BinaryOperator.Add -> {
-                if (left is Int && right is Int) {
-                    left + right
-                } else if (left is Double && right is Double) {
-                    left + right
-                } else if (left is String || right is String) {
-                    left.toString() + right.toString()
-                } else if (left is String) {
-                    left + right.toString()
+        return context.scope[name] ?: runtimeContext.variables[name] ?: throw RuntimeException("variable '$name' is not defined")
+    }
+
+    private fun Expression.Binary.processOperation(
+        context: FunctionContext,
+    ): Any {
+        return when (this.operator) {
+            BinaryOperator.Add -> mathAddExpression(context)
+            BinaryOperator.Sub -> mathSubExpression(context)
+            BinaryOperator.Mul -> mathMulExpression(context)
+            BinaryOperator.Div -> mathDivExpression(context)
+            BinaryOperator.Rem -> mathRemExpression(context)
+            BinaryOperator.Eq -> comparativeExpression(context) { left, right -> left == right }
+            BinaryOperator.Neq -> comparativeExpression(context) { left, right -> left != right }
+            BinaryOperator.Or -> logicOrExpression(context)
+            BinaryOperator.And -> logicAndExpression(context)
+            BinaryOperator.Lt -> comparativeMathExpression(context) { left, right -> left < right }
+            BinaryOperator.Lte -> comparativeMathExpression(context) { left, right -> left <= right }
+            BinaryOperator.Gt -> comparativeMathExpression(context) { left, right -> left > right }
+            BinaryOperator.Gte -> comparativeMathExpression(context) { left, right -> left >= right }
+        }
+    }
+
+    private fun Expression.Binary.comparativeMathExpression(
+        context: FunctionContext,
+        block: (left: Int, right: Int) -> Boolean,
+    ): Boolean {
+        val left = left.runExpression(context) as? Int
+        val right = right.runExpression(context) as? Int
+
+        if (left == null) {
+            throw RuntimeException("left side of the expression is null")
+        }
+        if (right == null) {
+            throw RuntimeException("right side of the expression is null")
+        }
+
+        return block(left, right)
+    }
+
+    private fun Expression.Binary.comparativeExpression(
+        context: FunctionContext,
+        block: (left: Any?, right: Any?) -> Boolean,
+    ): Boolean {
+        val left = left.runExpression(context)
+        val right = right.runExpression(context)
+        return block(left, right)
+    }
+
+    private fun Expression.Binary.mathRemExpression(
+        context: FunctionContext,
+    ): Any {
+        val left = left.runExpression(context)
+        val right = right.runExpression(context)
+        return if (left is Int && right is Int) {
+            left.rem(right)
+        } else {
+            throw RuntimeException("invalid rem expression")
+        }
+    }
+
+    private fun Expression.Binary.mathDivExpression(
+        context: FunctionContext,
+    ): Any {
+        val left = left.runExpression(context)
+
+        return if (left == 0 || left == 0.0) {
+            0
+        } else {
+            val right = right.runExpression(context)
+            if (left is Int && right is Int) {
+                if (right == 0) {
+                    NAN
                 } else {
-                    throw RuntimeException("Invalid Add binary expression")
+                    (left / right)
                 }
-            }
-            BinaryOperator.Sub -> {
-                if (left is Int && right is Int) {
-                    left - right
-                } else if (left is Double && right is Double) {
-                    left - right
-                } else {
-                    throw RuntimeException("Invalid Sub binary expression")
-                }
-            }
-            BinaryOperator.Mul -> {
-                if (left is Int && right is Int) {
-                    left * right
-                } else if (left is Double && right is Double) {
-                    left * right
-                } else {
-                    throw RuntimeException("Invalid Sub binary expression")
-                }
-            }
-            BinaryOperator.Div -> {
-                if (left is Int && right is Int) {
-                    if (right == 0) {
-                        NAN
-                    } else {
-                        left / right
-                    }
-                } else if (left is Double && right is Double) {
-                    if (right == 0.0) {
-                        FP_NAN
-                    } else {
-                        left / right
-                    }
-                } else {
-                    throw RuntimeException("Invalid Sub binary expression")
-                }
-            }
-            BinaryOperator.Rem -> {
-                if (left is Int && right is Int) {
-                    left.rem(right)
-                } else {
-                    throw RuntimeException("Invalid Sub binary expression")
-                }
-            }
-            BinaryOperator.Eq -> {
-                left == right
-            }
-            BinaryOperator.Neq -> {
-                left != right
-            }
-            BinaryOperator.Or -> {
-                val asBoolean = ((left is Boolean && left) || (right is Boolean && right))
-                val asInt = ((left is Int && left != 0) || (right is Int && right != 0))
-                asBoolean || asInt
-            }
-            BinaryOperator.And -> {
-                val asBoolean = ((left is Boolean && left) && (right is Boolean && right))
-                val asInt = (left is Int && left != 0) && (right is Int && right != 0)
-                asBoolean || asInt
-            }
-            BinaryOperator.Lt -> {
-                val asInt = left is Int && right is Int && left < right
-                val asDouble = left is Double && right is Double && left < right
-                asInt || asDouble
-            }
-            BinaryOperator.Lte -> {
-                val asInt = left is Int && right is Int && left <= right
-                val asDouble = left is Double && right is Double && left <= right
-                asInt || asDouble
-            }
-            BinaryOperator.Gt -> {
-                val asInt = left is Int && right is Int && left > right
-                val asDouble = left is Double && right is Double && left > right
-                asInt || asDouble
-            }
-            BinaryOperator.Gte -> {
-                val asInt = left is Int && right is Int && left >= right
-                val asDouble = left is Double && right is Double && left >= right
-                asInt || asDouble
+            } else {
+                throw RuntimeException("invalid division expression")
             }
         }
     }
 
-    private fun firstExpression(
-        expression: Expression.First,
-        scope: MutableMap<String, Any?>,
-    ): Any? {
-        return when (val value = runExpression(expression.value, scope)) {
-            is Pair<*, *> -> value.first
-            else -> throw RuntimeException("Invalid First expression")
+    private fun Expression.Binary.mathMulExpression(
+        context: FunctionContext,
+    ): Any {
+        val left = left.runExpression(context)
+
+        return if (left == 0 || left == 0.0) {
+            0
+        } else {
+            val right = right.runExpression(context.copy(canTailCallOptimize = false))
+            if (left is Int && right is Int) {
+                left * right
+            } else {
+                throw RuntimeException("invalid multiplication expression")
+            }
         }
     }
 
-    private fun secondExpression(
-        expression: Expression.Second,
-        scope: MutableMap<String, Any?>,
-    ): Any? {
-        return when (val value = runExpression(expression.value, scope)) {
-            is Pair<*, *> -> value.second
-            else -> throw RuntimeException("Invalid First expression")
+    private fun Expression.Binary.mathSubExpression(
+        context: FunctionContext,
+    ): Any {
+        val left = left.runExpression(context)
+        val right = right.runExpression(context)
+
+        return if (left is Int && right is Int) {
+            left - right
+        } else {
+            throw RuntimeException("invalid sub expression")
         }
     }
 
-    private fun ifExpression(
-        expression: Expression.If,
-        scope: MutableMap<String, Any?>,
-    ): Any? {
-        val condition = runExpression(expression.condition, scope)
-        return if (condition == true) {
-            expression.then.fold<Expression, Any?>(null) { _, functionExpression ->
-                runExpression(
-                    expression = functionExpression,
-                    scope = scope,
-                )
+    private fun Expression.Binary.mathAddExpression(
+        context: FunctionContext,
+    ): Any {
+        val left = left.runExpression(context)
+        val right = right.runExpression(context)
+
+        return if (left is Int && right is Int) {
+            left + right
+        } else if (left is String && right is Accumulator) {
+            right.apply {
+                value = left + right.asString()
+            }
+        } else if (left is Accumulator && right is String) {
+            left.apply {
+                value = left.asString() + right
+            }
+        } else if (right is Accumulator && left is String) {
+            left + right.asString()
+        } else if (left is String || right is String) {
+            left.toString() + right.toString()
+        } else if (left is String) {
+            left + right.toString()
+        } else if (right is Accumulator && left is Int) {
+            right.apply {
+                value = asInt() + left
+            }
+        } else if (left is Accumulator && right is Int) {
+            left.apply {
+                value = asInt() + right
             }
         } else {
-            expression.otherwise?.fold<Expression, Any?>(null) { _, functionExpression ->
-                runExpression(
-                    expression = functionExpression,
-                    scope = scope,
-                )
+            throw RuntimeException("invalid add expression")
+        }
+    }
+
+    private fun Expression.Binary.logicOrExpression(
+        context: FunctionContext,
+    ): Boolean {
+        val left = left.runExpression(context)
+        val leftPart = ((left is Boolean && left) || (left is Int && left != 0))
+        if (leftPart) {
+            return true
+        }
+
+        val right = right.runExpression(context)
+        return ((right is Boolean && right) || (right is Int && right != 0))
+    }
+
+    private fun Expression.Binary.logicAndExpression(
+        context: FunctionContext,
+    ): Boolean {
+        val left = left.runExpression(context)
+        val leftPart = ((left is Boolean && left) || (left is Int && left != 0))
+        if (!leftPart) {
+            return false
+        }
+
+        val right = right.runExpression(context)
+        return ((right is Boolean && right) || (right is Int && right != 0))
+    }
+
+    private fun Expression.First.first(
+        context: FunctionContext,
+    ): Any? {
+        return if (this.value.size > 1) {
+            throw RuntimeException("'first' function can only one argument")
+        } else {
+            val value = this.value.first()
+            if (value is Expression.TupleValue) {
+                value.first.runExpression(context)
+            } else {
+                when (val valueExpr = value.runExpression(context)) {
+                    is Pair<*, *> -> valueExpr.first
+                    else -> throw RuntimeException("'first' function can only handle Tuples")
+                }
             }
         }
     }
 
-    private fun strValueExpression(
-        expression: Expression.StrValue,
-    ): Any {
-        return expression.value
-    }
-
-    private fun intValueExpression(
-        expression: Expression.IntValue,
-    ): Any {
-        return expression.value
-    }
-
-    private fun boolValueExpression(
-        expression: Expression.BoolValue,
-    ): Any {
-        return expression.value
-    }
-
-    private fun tupleValueExpression(
-        expression: Expression.TupleValue,
-        scope: MutableMap<String, Any?>,
-    ): Any {
-        val first = runExpression(expression.first, scope)
-        val second = runExpression(expression.second, scope)
-        return first to second
-    }
-
-    private fun letExpression(
-        expression: Expression.Let,
-        scope: MutableMap<String, Any?>,
+    private fun Expression.Second.second(
+        context: FunctionContext,
     ): Any? {
-        scope[expression.name] = runExpression(expression.value, scope)
-        return null
-    }
-
-    private fun functionExpression(
-        expression: Expression.Function,
-    ): Any {
-        // Function will be executed only when called.
-        return expression
-    }
-
-    private fun printExpression(
-        expression: Expression.Print,
-        scope: MutableMap<String, Any?>,
-    ): Any? {
-        val value = runExpression(expression.value, scope)
-
-        if (!context.isTesting) {
-            println(value)
-        }
-
-        context.output.run {
-            if (size > context.maxOutputSize.coerceAtLeast(10)) {
-                // Clean the output if it's too big
-                clear()
+        return if (this.value.size > 1) {
+            throw RuntimeException("'second' function can only one argument")
+        } else {
+            val value = this.value.first()
+            if (value is Expression.TupleValue) {
+                value.second.runExpression(context)
+            } else {
+                when (val valueExpr = value.runExpression(context)) {
+                    is Pair<*, *> -> valueExpr.second
+                    else -> throw RuntimeException("'second' function can only handle Tuples")
+                }
             }
-
-            add(value.toString())
         }
+    }
 
+    private fun Expression.If.ifExpression(
+        context: FunctionContext,
+    ): Any? {
+        val result = condition.runExpression(context)
+        return if (result == true) {
+            then.runExpression(context)
+        } else {
+            otherwise.runExpression(context)
+        }
+    }
+
+    private fun Expression.StrValue.getStringValue(): String {
         return value
     }
 
-    private fun callExpression(
-        expression: Expression.Call,
-        scope: MutableMap<String, Any?>,
-    ): Any? {
-        return when (val target = context.variables[expression.callee.name]) {
-            null -> {
-                throw RuntimeException("Function '${expression.callee.name}' is not defined")
-            }
-            !is Expression.Function -> {
-                throw RuntimeException("'${expression.callee.name}' is not valid function")
-            }
-            (target.parameters.size != expression.arguments.size) -> {
-                throw RuntimeException("Missing param at '${expression.callee.name}' call")
-            }
-            else -> {
-                val newScope = target.parameters.mapIndexed { index: Int, param: String ->
-                    param to runExpression(expression.arguments[index], scope)
-                }.associate {
-                    it.first to it.second
-                }.toMutableMap()
+    private fun Expression.IntValue.getIntValue(): Int {
+        return value
+    }
 
-                target
-                    .value
-                    .fold<Expression, Any?>(null) { _, functionExpression ->
-                        runExpression(
-                            expression = functionExpression,
-                            scope = newScope,
-                        )
-                    }
+    private fun Expression.BoolValue.getBoolValue(): Boolean {
+        return value
+    }
+
+    private fun Expression.TupleValue.createTuple(
+        context: FunctionContext,
+    ): Any {
+        val first = first.runExpression(context)
+        val second = second.runExpression(context)
+        return first to second
+    }
+
+    private fun Expression.Let.defineExpression(
+        context: FunctionContext,
+    ): Any? {
+        val value = value.runExpression(context)
+        val sanitizedName = name.replace("_", "")
+        if (sanitizedName.isNotBlank()) {
+            if (RESERVED_WORDS.contains(sanitizedName)) {
+                throw RuntimeException("can't use reserved word '$sanitizedName' as variable name")
+            }
+            context.scope[name] = value
+        }
+        return value
+    }
+
+    private fun Expression.Function.defineFunction(
+        context: FunctionContext,
+    ): Any {
+        // Function will be executed only when called.
+        return copy(scopeCopy = context.scope + runtimeContext.variables)
+    }
+
+    private fun Expression.Print.printExpr(
+        context: FunctionContext,
+    ): Any? {
+        val result = if (value.size == 1) {
+            value.first().runExpression(context).also {
+                val asString = it.toString()
+                runtimeContext.output.add(asString)
+                println(asString)
+            }
+        } else {
+            throw RuntimeException("'print' function can handle only one argument")
+        }
+
+        runtimeContext.output.run {
+            if (size > runtimeContext.maxOutputSize.coerceAtLeast(10)) {
+                // Clean the output if it's too big
+                clear()
             }
         }
+
+        return result
+    }
+
+    private fun Expression.Call.callFunction(
+        context: FunctionContext,
+    ): Any? {
+        val callerName = callee.name
+        val target = context.scope[callerName] ?: runtimeContext.variables[callerName]
+        return when (target) {
+            null -> {
+                throw RuntimeException("function '$callerName' is not defined")
+            }
+            !is Expression.Function -> {
+                throw RuntimeException("'$callerName' is not a function")
+            }
+            (target.parameters.size != this.arguments.size) -> {
+                throw RuntimeException("missing param at '$callerName' call")
+            }
+            else -> {
+                // Check for some predefined optimizations
+                if (runtimeContext.runtimeOptimization) {
+                    RunTimeOptimizations.checkRunTimeOptimizations(
+                        exprCall = this,
+                        expressions = target.value,
+                    ).also {
+                        if (it != null) {
+                            return it
+                        }
+                    }
+                }
+
+                // Check for recursive calls
+                val recursiveCallDepth = if (context.root == callerName) {
+                    // Recursive call detected
+                    context.recursiveCall.inc().also {
+                        if (it > 900) { throw RuntimeException("recursive call limit exceeded") }
+                    }
+                } else {
+                    1
+                }
+
+                val functionScope = (context.scope + target.scopeCopy).toMutableMap()
+                val newFunctionContext = context.copy(
+                    scope = functionScope,
+                    root = callerName,
+                    recursiveCall = recursiveCallDepth,
+                )
+                val resolvedArguments = target.parameters.mapIndexed { index: Int, param: String ->
+                    param to arguments[index].runExpression(newFunctionContext)
+                }
+                var newScope = target.scopeCopy.toMutableMap().apply { putAll(resolvedArguments) }
+
+                if (context.canTailCallOptimize) {
+                    return Accumulator(newScope)
+                }
+
+                val cached = if (runtimeContext.cacheEnabled && !context.canTailCallOptimize) {
+                    runtimeContext.functionCache[callerName]?.get(newScope.toString())
+                } else {
+                    null
+                }
+
+                val isTailCallOptimizable = checkTailRecursive(this, target.value)
+                var itResult: Any? = null
+                var accumulator: Accumulator? = null
+
+                do {
+                    if (itResult is Accumulator) {
+                        newScope = itResult.scope.toMutableMap()
+                        accumulator = accumulator?.resolve(itResult) ?: itResult
+                    }
+
+                    val iterationContext = newFunctionContext.copy(
+                        scope = newScope,
+                        canTailCallOptimize = isTailCallOptimizable,
+                    )
+
+                    itResult = cached ?: target
+                        .value
+                        .fold<Expression, Any?>(null) { _, functionExpression ->
+                            functionExpression.runExpression(iterationContext)
+                        }.also {
+                            if (runtimeContext.cacheEnabled && !isTailCallOptimizable) {
+                                val cacheMap = runtimeContext.functionCache[callerName] ?: mutableMapOf()
+                                cacheMap[newScope.toString()] = it
+                                runtimeContext.functionCache[callerName] = cacheMap
+                            }
+                        }
+                } while (itResult is Accumulator)
+
+                if (accumulator != null) {
+                    when (itResult) {
+                        is Int -> {
+                            itResult + accumulator.asInt()
+                        }
+                        is String -> {
+                            accumulator.asString() + itResult
+                        }
+                        else -> {
+                            itResult
+                        }
+                    }
+                } else {
+                    itResult
+                }
+            }
+        }
+    }
+
+    private fun checkTailRecursive(
+        caller: Expression.Call,
+        expressions: List<Expression>,
+    ): Boolean {
+        var result = false
+
+        if (expressions.isNotEmpty()) {
+            val callerName = caller.callee.name
+            var count = 0
+            for (expr in expressions) {
+                count += expr.findCalls(callerName)
+                if (count > 1) {
+                    break
+                }
+            }
+            result = (count == 1)
+        }
+
+        return result
+    }
+
+    private fun Expression.findCalls(
+        callerName: String,
+    ): Int {
+        var count = 0
+
+        if (this is Expression.Call && callee.name == callerName) {
+            count++
+        } else if (this is Expression.Binary) {
+            count += left.findCalls(callerName)
+            if (count > 1) {
+                return count
+            }
+            count += right.findCalls(callerName)
+        } else if (this is Expression.If) {
+            count += then.findCalls(callerName)
+            if (count > 1) {
+                return count
+            }
+            count += otherwise.findCalls(callerName)
+        }
+        return count
+    }
+
+    companion object {
+        private val RESERVED_WORDS = listOf("print", "let", "if", "else", "true", "false", "first", "second")
     }
 }

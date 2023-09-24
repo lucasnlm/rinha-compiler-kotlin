@@ -4,18 +4,16 @@ FROM archlinux:latest
 SHELL [ "/bin/bash", "-c" ]
 ENV SHELL=/bin/bash
 
-WORKDIR /var/app
+WORKDIR /var/rinha
 
-COPY . /var/app
+COPY . /var/rinha
 
 RUN pacman -Syyyy && \
-    pacman -S --noconfirm gcc rustup git unzip libxcrypt-compat && \
-    rustup default stable  && \
-    cargo install rinha  && \
-    curl -L https://github.com/lucasnlm/rinha-compiler-kotlin/releases/download/1.1.2/rinha-compiler-kotlin-linux-64.zip > kotlin-rinha.zip  && \
+    pacman -S --noconfirm gcc unzip libxcrypt-compat && \
+    curl -L https://github.com/lucasnlm/rinha-compiler-kotlin/releases/download/1.2.0/rinha-compiler-kotlin-linux-64.zip > kotlin-rinha.zip  && \
     unzip -o kotlin-rinha.zip  && \
     rm kotlin-rinha.zip
 
-ENV PATH="${PATH}:/root/.cargo/bin/"
+RUN chmod +x ./docker/entrypoint.sh
 
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT ["./docker/entrypoint.sh"]

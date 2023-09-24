@@ -24,7 +24,7 @@ class ExpressionRunner(
                 println("e: ${it.message}")
             }
         }.onSuccess { expressions ->
-            run(expressions)?.also { response ->
+            runFromExpressions(expressions)?.also { response ->
                 val last = runtimeContext.output.lastOrNull()
                 if (last == null || last != response.toString()) {
                     println(response.toString())
@@ -39,7 +39,7 @@ class ExpressionRunner(
      * @throws RuntimeException If any expression fails.
      * @return The result of the last expression.
      */
-    fun run(expressions: List<Expression>): Any? {
+    fun runFromExpressions(expressions: List<Expression>): Any? {
         if (expressions.isEmpty()) {
             throw RuntimeException("no expressions to run")
         }

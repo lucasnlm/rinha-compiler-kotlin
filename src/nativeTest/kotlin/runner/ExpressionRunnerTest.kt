@@ -320,7 +320,7 @@ class ExpressionRunnerTest {
         val runner = ExpressionRunner(
             runtimeContext = RunTimeContext(isTesting = true),
         )
-        runner.run(result)
+        runner.runFromExpressions(result)
         block(runner.runtimeContext)
     }
 
@@ -337,7 +337,7 @@ class ExpressionRunnerTest {
             ),
         )
 
-        runner.run(result)
+        runner.runFromExpressions(result)
         block(runner.runtimeContext)
     }
 }

@@ -28,7 +28,7 @@ object FileRunner {
             ).getOrThrow()
 
             // Create a new Runner to run the expressions
-            ExpressionRunner().run(expressions)
+            ExpressionRunner().runFromExpressions(expressions)
         }.onFailure {
             println("e: ${it.message}")
         }

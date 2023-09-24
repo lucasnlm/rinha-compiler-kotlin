@@ -346,13 +346,9 @@ class ExpressionRunner(
     ): Any? {
         val condition = this.condition.runExpression(context)
         return if (condition == true) {
-            then.fold<Expression, Any?>(null) { _, functionExpression ->
-                functionExpression.runExpression(context)
-            }
+            then.runExpression(context)
         } else {
-            otherwise?.fold<Expression, Any?>(null) { _, functionExpression ->
-                functionExpression.runExpression(context)
-            }
+            otherwise.runExpression(context)
         }
     }
 
@@ -424,7 +420,8 @@ class ExpressionRunner(
         context: FunctionContext,
     ): Any? {
         val callerName = this.callee.name
-        return when (val target = runtimeContext.variables[callerName]) {
+        val target = context.scope[callerName] ?: runtimeContext.variables[callerName]
+        return when (target) {
             null -> {
                 throw RuntimeException("function '$callerName' is not defined")
             }
@@ -560,15 +557,11 @@ class ExpressionRunner(
             }
             count += right.findCalls(callerName)
         } else if (this is Expression.If) {
-            count += this.then.sumOf {
-                it.findCalls(callerName)
-            }
+            count += this.then.findCalls(callerName)
             if (count > 1) {
                 return count
             }
-            count += this.otherwise?.sumOf {
-                it.findCalls(callerName)
-            } ?: 0
+            count += this.otherwise.findCalls(callerName)
         }
         return count
     }

@@ -52,7 +52,6 @@ import parser.ExpressionJsonIds.LOCATION_FILENAME
 import parser.ExpressionJsonIds.LOCATION_START
 import parser.JsonObjectExt.array
 import parser.JsonObjectExt.obj
-import parser.JsonObjectExt.objOrNull
 import parser.JsonObjectExt.value
 
 object AstParser {
@@ -184,12 +183,12 @@ object AstParser {
     private fun JsonObject.parseIfExpression(): Expression.If {
         val condition = expr(EXPRESSION_IF_CONDITION)
         val then = expr(EXPRESSION_IF_THEN)
-        val otherwise = exprOrNull(EXPRESSION_IF_OTHERWISE)
+        val otherwise = expr(EXPRESSION_IF_OTHERWISE)
 
         return Expression.If(
             condition = condition,
-            then = listOf(then),
-            otherwise = listOfNotNull(otherwise),
+            then = then,
+            otherwise = otherwise,
         )
     }
 
@@ -269,9 +268,5 @@ object AstParser {
 
     private fun JsonObject.expr(key: String): Expression {
         return obj(key).parseExpressionByKind()
-    }
-
-    private fun JsonObject.exprOrNull(key: String): Expression? {
-        return objOrNull(key)?.parseExpressionByKind()
     }
 }

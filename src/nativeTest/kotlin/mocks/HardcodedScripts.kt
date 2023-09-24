@@ -165,6 +165,23 @@ object HardcodedScripts {
         let result2 = foo2();
     """.trimIndent()
 
+    val incrementSource = """
+        let increment = fn (n) => {
+            let add = fn (x) => { n + x }
+            add(1)
+        }
+        print(increment(1))
+    """.trimIndent()
+
+    val multiInternalFunctionsSource = """
+        let sumX2nX3 = fn (n) => {
+            let x2 = fn (x) => { x * 2 }
+            let x3 = fn (x) => { x * 3 }
+            x2(n) + x3(n)
+        }
+        print(sumX2nX3(2)) // result = 2*2 + 2*3 => 4 + 6 => 10
+    """.trimIndent()
+
     val commentsSource = """
         let x = 1; // this should be ignored
         /* this should be ignored too */

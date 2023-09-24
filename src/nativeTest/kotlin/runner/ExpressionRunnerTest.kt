@@ -258,6 +258,26 @@ class ExpressionRunnerTest {
     }
 
     @Test
+    fun `test increment`() {
+        testScript(
+            source = HardcodedScripts.incrementSource,
+        ) {
+            assertEquals(1, output.size)
+            assertEquals("2", output.first())
+        }
+    }
+
+    @Test
+    fun `test multiInternalFunctionsSource`() {
+        testScript(
+            source = HardcodedScripts.multiInternalFunctionsSource,
+        ) {
+            assertEquals(1, output.size)
+            assertEquals("10", output.first())
+        }
+    }
+
+    @Test
     fun `test comments`() {
         testScript(
             source = HardcodedScripts.commentsSource,

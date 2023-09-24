@@ -56,34 +56,30 @@ class RinhaExamplesTest {
                                 ),
                                 operator = BinaryOperator.Eq,
                             ),
-                            then = listOf(
-                                Expression.Var(
+                            then = Expression.Var(
+                                name = "n",
+                            ),
+                            otherwise = Expression.Binary(
+                                left = Expression.Var(
                                     name = "n",
                                 ),
-                            ),
-                            otherwise = listOf(
-                                Expression.Binary(
-                                    left = Expression.Var(
-                                        name = "n",
+                                right = Expression.Call(
+                                    callee = Expression.Var(
+                                        name = "sum",
                                     ),
-                                    right = Expression.Call(
-                                        callee = Expression.Var(
-                                            name = "sum",
-                                        ),
-                                        arguments = listOf(
-                                            Expression.Binary(
-                                                left = Expression.Var(
-                                                    name = "n",
-                                                ),
-                                                right = Expression.IntValue(
-                                                    value = 1,
-                                                ),
-                                                operator = BinaryOperator.Sub,
+                                    arguments = listOf(
+                                        Expression.Binary(
+                                            left = Expression.Var(
+                                                name = "n",
                                             ),
+                                            right = Expression.IntValue(
+                                                value = 1,
+                                            ),
+                                            operator = BinaryOperator.Sub,
                                         ),
                                     ),
-                                    operator = BinaryOperator.Add,
                                 ),
+                                operator = BinaryOperator.Add,
                             ),
                         ),
                     ),

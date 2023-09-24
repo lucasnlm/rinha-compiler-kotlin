@@ -26,11 +26,11 @@ object RunTimeOptimizations {
             val lastExpression = expressions.lastOrNull()
             if (lastExpression is Expression.If &&
                 lastExpression.condition is Expression.Binary &&
-                lastExpression.otherwise?.firstOrNull() is Expression.Binary &&
-                lastExpression.then.firstOrNull() is Expression.Var
+                lastExpression.otherwise is Expression.Binary &&
+                lastExpression.then is Expression.Var
             ) {
                 val condition = lastExpression.condition
-                val otherwise = lastExpression.otherwise.first() as Expression.Binary
+                val otherwise = lastExpression.otherwise
 
                 if (condition.left is Expression.Var &&
                     condition.right is Expression.IntValue &&
@@ -80,10 +80,10 @@ object RunTimeOptimizations {
                     ifExpr.condition.right is Expression.IntValue &&
                     ifExpr.condition.right.value == 2
                 ) {
-                    if (ifExpr.then.last() is Expression.Var &&
-                        ifExpr.otherwise?.last() is Expression.Binary
+                    if (ifExpr.then is Expression.Var &&
+                        ifExpr.otherwise is Expression.Binary
                     ) {
-                        val elseExpr = (ifExpr.otherwise.last() as Expression.Binary)
+                        val elseExpr = ifExpr.otherwise
                         val leftIsRecursive = elseExpr.left is Expression.Call && elseExpr.left.callee.name == exprCall.callee.name
                         val rightIsRecursive = elseExpr.right is Expression.Call && elseExpr.right.callee.name == exprCall.callee.name
                         val isSumOfRecursion = leftIsRecursive && rightIsRecursive && elseExpr.operator == BinaryOperator.Add

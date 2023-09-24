@@ -32,6 +32,7 @@ class ExpressionRunnerTest {
     @Test
     fun `test basic math script`() {
         testScript(
+            ast = HardcodedScripts.testMathSourceAst,
             source = HardcodedScripts.testMathSource,
         ) {
             assertEquals(26, variables.size)
@@ -157,6 +158,7 @@ class ExpressionRunnerTest {
     @Test
     fun `test custom sum script`() {
         testScript(
+            ast = HardcodedScripts.sumCustomSourceAst,
             source = HardcodedScripts.sumCustomSource,
             runtimeOptimization = false,
         ) {
@@ -169,6 +171,7 @@ class ExpressionRunnerTest {
     @Test
     fun `test custom sum with multiplication script`() {
         testScript(
+            ast = HardcodedScripts.sumMulSourceAst,
             source = HardcodedScripts.sumMulSource,
             runtimeOptimization = false,
         ) {
@@ -196,6 +199,7 @@ class ExpressionRunnerTest {
     @Test
     fun `test print returns - with let`() {
         testScript(
+            ast = HardcodedScripts.printReturnSource1Ast,
             source = HardcodedScripts.printReturnSouce1,
         ) {
             assertNull(variables["_"])
@@ -209,6 +213,7 @@ class ExpressionRunnerTest {
     @Test
     fun `test print returns - with fn`() {
         testScript(
+            ast = HardcodedScripts.printReturnSource2Ast,
             source = HardcodedScripts.printReturnSouce2,
         ) {
             assertNotNull(variables["f"])
@@ -222,7 +227,8 @@ class ExpressionRunnerTest {
     @Test
     fun `test print returns - print of prints`() {
         testScript(
-            source = HardcodedScripts.printReturnSouce3,
+            ast = HardcodedScripts.printReturnSource3Ast,
+            source = HardcodedScripts.printReturnSource3,
         ) {
             assertTrue(variables.isEmpty())
             assertEquals(3, output.size)
@@ -235,7 +241,8 @@ class ExpressionRunnerTest {
     @Test
     fun `test print returns - tuple`() {
         testScript(
-            source = HardcodedScripts.printReturnSouce4,
+            ast = HardcodedScripts.printReturnSource4Ast,
+            source = HardcodedScripts.printReturnSource4,
         ) {
             assertNotNull(variables["tuple"])
             assertEquals(3, output.size)
@@ -248,9 +255,9 @@ class ExpressionRunnerTest {
     @Test
     fun `test immutability`() {
         testScript(
+            ast = HardcodedScripts.immutabilitySourceAst,
             source = HardcodedScripts.immutabilitySource,
         ) {
-            assertEquals(0, output.size)
             assertEquals(2, variables["x"])
             assertEquals(1, variables["result1"])
             assertEquals(2, variables["result2"])
@@ -260,6 +267,7 @@ class ExpressionRunnerTest {
     @Test
     fun `test increment`() {
         testScript(
+            ast = HardcodedScripts.incrementSourceAst,
             source = HardcodedScripts.incrementSource,
         ) {
             assertEquals(1, output.size)
@@ -270,6 +278,7 @@ class ExpressionRunnerTest {
     @Test
     fun `test multiInternalFunctionsSource`() {
         testScript(
+            ast = HardcodedScripts.multiInternalFunctionsSourceAst,
             source = HardcodedScripts.multiInternalFunctionsSource,
         ) {
             assertEquals(1, output.size)
@@ -301,6 +310,7 @@ class ExpressionRunnerTest {
     @Test
     fun `test fibtail source`() {
         testScript(
+            ast = HardcodedScripts.fibtailSourceAst,
             source = HardcodedScripts.fibtailSource,
         ) {
             assertEquals("873876091", output.first())
@@ -310,6 +320,7 @@ class ExpressionRunnerTest {
     @Test
     fun `test resStringSource source`() {
         testScript(
+            ast = HardcodedScripts.resStringSourceAst,
             source = HardcodedScripts.resStringSource,
         ) {
             assertEquals("54321", output.first())

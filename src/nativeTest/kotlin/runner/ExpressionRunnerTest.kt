@@ -318,10 +318,10 @@ class ExpressionRunnerTest {
     private fun testScriptFromAst(target: String, block: RunTimeContext.() -> Unit) {
         val result = AstHelper.mockAst(content = target).getOrThrow()
         val runner = ExpressionRunner(
-            context = RunTimeContext(isTesting = true),
+            runtimeContext = RunTimeContext(isTesting = true),
         )
         runner.run(result)
-        block(runner.context)
+        block(runner.runtimeContext)
     }
 
     private fun testScriptFromSource(
@@ -331,13 +331,13 @@ class ExpressionRunnerTest {
     ) {
         val result = RinhaGrammar.parseSource(source)
         val runner = ExpressionRunner(
-            context = RunTimeContext(
+            runtimeContext = RunTimeContext(
                 isTesting = true,
                 runtimeOptimization = runtimeOptimization,
             ),
         )
 
         runner.run(result)
-        block(runner.context)
+        block(runner.runtimeContext)
     }
 }

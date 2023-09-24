@@ -7,7 +7,7 @@ import parser.RinhaGrammar
 import platform.posix.NAN
 
 class ExpressionRunner(
-    val context: RunTimeContext = RunTimeContext(),
+    val runtimeContext: RunTimeContext = RunTimeContext(),
 ) {
     /**
      * Run the expressions from a Rinha source code.
@@ -25,7 +25,7 @@ class ExpressionRunner(
             }
         }.onSuccess { expressions ->
             run(expressions)?.also { response ->
-                val last = context.output.lastOrNull()
+                val last = runtimeContext.output.lastOrNull()
                 if (last == null || last != response.toString()) {
                     println(response.toString())
                 }
@@ -46,7 +46,7 @@ class ExpressionRunner(
 
         return expressions.fold<Expression, Any?>(null) { _, expression ->
             expression.runExpression(
-                scope = context.variables,
+                scope = runtimeContext.variables,
                 root = null,
                 recursiveCall = 0,
             )
@@ -57,17 +57,17 @@ class ExpressionRunner(
      * Clear the output.
      */
     fun clearOutput() {
-        context.output.clear()
+        runtimeContext.output.clear()
     }
 
     /**
      * Print the global scope.
      */
     fun printGlobalScope() {
-        if (context.variables.isEmpty()) {
+        if (runtimeContext.variables.isEmpty()) {
             println("{}")
         } else {
-            context.variables.map {
+            runtimeContext.variables.map {
                 when (it.value) {
                     is Int -> {
                         val variable = it.value as Int
@@ -100,7 +100,7 @@ class ExpressionRunner(
             }.joinToString(prefix = "{\n", separator = ",\n", postfix = ",\n}") {
                 "  $it"
             }.also {
-                if (!context.isTesting && it.isNotBlank()) {
+                if (!runtimeContext.isTesting && it.isNotBlank()) {
                     println(it)
                 }
             }
@@ -133,7 +133,7 @@ class ExpressionRunner(
     private fun Expression.Var.getVariableValue(
         scope: Map<String, Any?>,
     ): Any {
-        return scope[name] ?: context.variables[name] ?: throw RuntimeException("variable '${name}' is not defined")
+        return scope[name] ?: runtimeContext.variables[name] ?: throw RuntimeException("variable '${name}' is not defined")
     }
 
     private fun Expression.Binary.processOperation(
@@ -561,7 +561,7 @@ class ExpressionRunner(
         scope: Map<String, Any?>,
     ): Any {
         // Function will be executed only when called.
-        return copy(scopeCopy = scope + context.variables)
+        return copy(scopeCopy = scope + runtimeContext.variables)
     }
 
     private fun Expression.Print.print(
@@ -576,15 +576,15 @@ class ExpressionRunner(
                 recursiveCall = recursiveCall,
             ).also {
                 val asString = it.toString()
-                context.output.add(asString)
+                runtimeContext.output.add(asString)
                 println(asString)
             }
         } else {
             throw RuntimeException("'print' function can handle only one argument")
         }
 
-        context.output.run {
-            if (size > context.maxOutputSize.coerceAtLeast(10)) {
+        runtimeContext.output.run {
+            if (size > runtimeContext.maxOutputSize.coerceAtLeast(10)) {
                 // Clean the output if it's too big
                 clear()
             }
@@ -600,7 +600,7 @@ class ExpressionRunner(
         canTailCallOptimize: Boolean,
     ): Any? {
         val callerName = this.callee.name
-        return when (val target = context.variables[callerName]) {
+        return when (val target = runtimeContext.variables[callerName]) {
             null -> {
                 throw RuntimeException("function '${callerName}' is not defined")
             }
@@ -612,7 +612,7 @@ class ExpressionRunner(
             }
             else -> {
                 // Check for some predefined optimizations
-                if (context.runtimeOptimization) {
+                if (runtimeContext.runtimeOptimization) {
                     RunTimeOptimizations.checkRunTimeOptimizations(
                         exprCall = this,
                         expressions = target.value,
@@ -647,8 +647,8 @@ class ExpressionRunner(
                     return Accumulator(newScope)
                 }
 
-                val cached = if (context.cacheEnabled && !canTailCallOptimize) {
-                    context.functionCache[callerName]?.get(newScope.toString())
+                val cached = if (runtimeContext.cacheEnabled && !canTailCallOptimize) {
+                    runtimeContext.functionCache[callerName]?.get(newScope.toString())
                 } else {
                     null
                 }
@@ -673,10 +673,10 @@ class ExpressionRunner(
                                 canTailCallOptimize = isTailCallOptimizable,
                             )
                         }.also {
-                            if (context.cacheEnabled && !isTailCallOptimizable) {
-                                val cacheMap = context.functionCache[callerName] ?: mutableMapOf()
+                            if (runtimeContext.cacheEnabled && !isTailCallOptimizable) {
+                                val cacheMap = runtimeContext.functionCache[callerName] ?: mutableMapOf()
                                 cacheMap[newScope.toString()] = it
-                                context.functionCache[callerName] = cacheMap
+                                runtimeContext.functionCache[callerName] = cacheMap
                             }
                         }
                 } while (itResult is Accumulator)

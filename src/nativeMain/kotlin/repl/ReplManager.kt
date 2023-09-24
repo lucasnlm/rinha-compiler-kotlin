@@ -16,7 +16,7 @@ object ReplManager {
         """.trimIndent().let(::println)
 
         val runner = ExpressionRunner(
-            context = RunTimeContext(),
+            runtimeContext = RunTimeContext(),
         )
 
         while (true) {

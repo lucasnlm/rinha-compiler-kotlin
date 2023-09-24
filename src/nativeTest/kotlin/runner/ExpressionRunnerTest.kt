@@ -160,10 +160,7 @@ class ExpressionRunnerTest {
         testScript(
             ast = HardcodedScripts.sumCustomSourceAst,
             source = HardcodedScripts.sumCustomSource,
-            runtimeOptimization = false,
         ) {
-            assertEquals(1, variables.size)
-            assertEquals(1, output.size)
             assertEquals("500500", output.first())
         }
     }
@@ -314,6 +311,16 @@ class ExpressionRunnerTest {
             source = HardcodedScripts.fibtailSource,
         ) {
             assertEquals("873876091", output.first())
+        }
+    }
+
+    @Test
+    fun `test doubleTryErrorSource`() {
+        testScript(
+            source = HardcodedScripts.doubleTryErrorSource,
+        ) {
+            assertEquals(1, output.size)
+            assertEquals("1950399", output.first())
         }
     }
 

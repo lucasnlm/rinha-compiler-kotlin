@@ -236,6 +236,33 @@ object HardcodedScripts {
         {"name":"test.rinha","expression":{"kind":"Let","name":{"text":"fibrec","location":{"start":4,"end":10,"filename":"test.rinha"}},"value":{"kind":"Function","parameters":[{"text":"n","location":{"start":17,"end":18,"filename":"test.rinha"}},{"text":"k1","location":{"start":20,"end":22,"filename":"test.rinha"}},{"text":"k2","location":{"start":24,"end":26,"filename":"test.rinha"}}],"value":{"kind":"If","condition":{"kind":"Binary","lhs":{"kind":"Var","text":"n","location":{"start":47,"end":48,"filename":"test.rinha"}},"op":"Eq","rhs":{"kind":"Int","value":0,"location":{"start":52,"end":53,"filename":"test.rinha"}},"location":{"start":47,"end":53,"filename":"test.rinha"}},"then":{"kind":"Var","text":"k1","location":{"start":69,"end":71,"filename":"test.rinha"}},"otherwise":{"kind":"If","condition":{"kind":"Binary","lhs":{"kind":"Var","text":"n","location":{"start":107,"end":108,"filename":"test.rinha"}},"op":"Eq","rhs":{"kind":"Int","value":1,"location":{"start":112,"end":113,"filename":"test.rinha"}},"location":{"start":107,"end":113,"filename":"test.rinha"}},"then":{"kind":"Var","text":"k2","location":{"start":131,"end":133,"filename":"test.rinha"}},"otherwise":{"kind":"Call","callee":{"kind":"Var","text":"fibrec","location":{"start":169,"end":175,"filename":"test.rinha"}},"arguments":[{"kind":"Binary","lhs":{"kind":"Var","text":"n","location":{"start":176,"end":177,"filename":"test.rinha"}},"op":"Sub","rhs":{"kind":"Int","value":1,"location":{"start":180,"end":181,"filename":"test.rinha"}},"location":{"start":176,"end":181,"filename":"test.rinha"}},{"kind":"Var","text":"k2","location":{"start":183,"end":185,"filename":"test.rinha"}},{"kind":"Binary","lhs":{"kind":"Var","text":"k1","location":{"start":187,"end":189,"filename":"test.rinha"}},"op":"Add","rhs":{"kind":"Var","text":"k2","location":{"start":192,"end":194,"filename":"test.rinha"}},"location":{"start":187,"end":194,"filename":"test.rinha"}}],"location":{"start":169,"end":195,"filename":"test.rinha"}},"location":{"start":103,"end":209,"filename":"test.rinha"}},"location":{"start":43,"end":221,"filename":"test.rinha"}},"location":{"start":13,"end":231,"filename":"test.rinha"}},"next":{"kind":"Let","name":{"text":"fib","location":{"start":245,"end":248,"filename":"test.rinha"}},"value":{"kind":"Function","parameters":[{"text":"n","location":{"start":255,"end":256,"filename":"test.rinha"}}],"value":{"kind":"Call","callee":{"kind":"Var","text":"fibrec","location":{"start":273,"end":279,"filename":"test.rinha"}},"arguments":[{"kind":"Var","text":"n","location":{"start":280,"end":281,"filename":"test.rinha"}},{"kind":"Int","value":0,"location":{"start":283,"end":284,"filename":"test.rinha"}},{"kind":"Int","value":1,"location":{"start":286,"end":287,"filename":"test.rinha"}}],"location":{"start":273,"end":288,"filename":"test.rinha"}},"location":{"start":251,"end":298,"filename":"test.rinha"}},"next":{"kind":"Print","value":{"kind":"Call","callee":{"kind":"Var","text":"fib","location":{"start":314,"end":317,"filename":"test.rinha"}},"arguments":[{"kind":"Int","value":100000,"location":{"start":318,"end":324,"filename":"test.rinha"}}],"location":{"start":314,"end":325,"filename":"test.rinha"}},"location":{"start":308,"end":326,"filename":"test.rinha"}},"location":{"start":241,"end":326,"filename":"test.rinha"}},"location":{"start":0,"end":326,"filename":"test.rinha"}},"location":{"start":0,"end":326,"filename":"test.rinha"}}
     """.trimIndent()
 
+    val doubleTryErrorSource = """
+        let iter = fn (from, to, call, prev) => {
+          if (from < to) {
+            let res = call(from);
+            iter(from + 1, to, call, res)
+          } else {
+            prev
+          }
+        };
+
+        let work = fn(x) => {
+          let work_closure = fn(y) => {
+            let xx = x * y;
+            let tupl = (xx, x);
+            let f = first(tupl);
+            let s = second(tupl);
+            f * s
+          };
+
+          iter(0, 200, work_closure, 0)
+        };
+
+        let iteration = iter(0, 100, work, 0);
+
+        print(iteration)
+    """.trimIndent()
+
     val fibtailSource = """
         let fibrec = fn (n, k1, k2) => {
           if (n == 0) {

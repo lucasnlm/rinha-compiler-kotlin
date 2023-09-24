@@ -24,7 +24,7 @@ class ExpressionRunner(
                 println("e: ${it.message}")
             }
         }.onSuccess { expressions ->
-            runFromExpressions(expressions)?.also { response ->
+            doubleTryRun(expressions)?.also { response ->
                 val last = runtimeContext.output.lastOrNull()
                 if (last == null || last != response.toString()) {
                     println(response.toString())
@@ -44,15 +44,7 @@ class ExpressionRunner(
             throw RuntimeException("no expressions to run")
         }
 
-        val context = FunctionContext(
-            scope = runtimeContext.variables,
-            root = null,
-            recursiveCall = 0,
-        )
-
-        return expressions.fold<Expression, Any?>(null) { _, expression ->
-            expression.runExpression(context)
-        }
+        return doubleTryRun(expressions)
     }
 
     /**
@@ -106,6 +98,43 @@ class ExpressionRunner(
                     println(it)
                 }
             }
+        }
+    }
+
+    /**
+     * Try with optimization. If it fails, try without optimization. :P
+     * @param expressions The expressions to run.
+     * @return The result of the last expression.
+     */
+    private fun doubleTryRun(expressions: List<Expression>): Any? {
+        var tryAgain = false
+        var result: Any? = null
+
+        val context = FunctionContext(
+            scope = runtimeContext.variables,
+            root = null,
+            recursiveCall = 0,
+            runtimeOptimization = runtimeContext.runtimeOptimization,
+        )
+
+        runCatching {
+            result = expressions.runExpressionsWith(context)
+        }.onFailure {
+            tryAgain = true
+        }
+
+        if (tryAgain && runtimeContext.fallbackOptimization) {
+            result = expressions.runExpressionsWith(context.copy(runtimeOptimization = false))
+        }
+
+        return result
+    }
+
+    private fun List<Expression>.runExpressionsWith(
+        context: FunctionContext,
+    ): Any? {
+        return fold<Expression, Any?>(null) { _, expression ->
+            expression.runExpression(context)
         }
     }
 
@@ -437,7 +466,7 @@ class ExpressionRunner(
             }
             else -> {
                 // Check for some predefined optimizations
-                if (runtimeContext.runtimeOptimization) {
+                if (context.runtimeOptimization) {
                     RunTimeOptimizations.checkRunTimeOptimizations(
                         exprCall = this,
                         expressions = target.value,
@@ -469,7 +498,7 @@ class ExpressionRunner(
                 }
                 var newScope = target.scopeCopy.toMutableMap().apply { putAll(resolvedArguments) }
 
-                if (context.canTailCallOptimize) {
+                if (context.canTailCallOptimize && context.runtimeOptimization) {
                     return Accumulator(newScope)
                 }
 

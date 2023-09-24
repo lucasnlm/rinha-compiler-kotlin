@@ -8,6 +8,7 @@ package runner
  * @property isTesting Whether the interpreter is running in test mode.
  * @property runtimeOptimization Whether the interpreter is running in runtime optimization mode.
  * @property cacheEnabled Whether the interpreter is running with cache enabled.
+ * @property fallbackOptimization If an optimization fails, fallback to the default behavior.
  */
 data class RunTimeContext(
     val variables: MutableMap<String, Any?> = mutableMapOf(),
@@ -17,4 +18,5 @@ data class RunTimeContext(
     val isTesting: Boolean = false,
     val runtimeOptimization: Boolean = true,
     val cacheEnabled: Boolean = true,
+    val fallbackOptimization: Boolean = true,
 )

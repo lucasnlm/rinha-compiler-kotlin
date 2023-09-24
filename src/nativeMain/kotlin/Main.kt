@@ -24,6 +24,7 @@ fun showHelp() {
       Options:
           help          Show this help message and exit.
           repl          Run the REPL.
+          rinha         Run on Rinha mode.
           <file.json>   Run from AST file. E.g: rinhak test.json
           <file.rinha>  Run from Rinha file. E.g: rinhak test.rinha
     """.trimIndent().let(::println)

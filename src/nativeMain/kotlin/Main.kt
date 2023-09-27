@@ -19,7 +19,7 @@ fun main(originalArguments: Array<String> = arrayOf()) {
 
 fun showHelp() {
     """
-    Kotlin Rinha Interpreter
+    ${AppName.name}
       Usage: rinhak [options] [source file]
       Options:
           help          Show this help message and exit.

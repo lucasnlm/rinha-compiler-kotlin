@@ -16,13 +16,11 @@ sealed class Expression {
 
     /**
      * Represents a function expression in the AST.
-     * @property name The name of the function.
      * @property parameters The parameters of the function.
      * @property value The value of the function.
      * @property scopeCopy The scope copy of the function.
      */
     data class Function(
-        val name: String? = null,
         val parameters: List<String>,
         val value: List<Expression>,
         val scopeCopy: Map<String, Any?> = mapOf(),
@@ -120,7 +118,7 @@ sealed class Expression {
      * @property arguments The arguments of the call expression.
      */
     data class Call(
-        val callee: Var,
+        val callee: Expression,
         val arguments: List<Expression>,
     ) : Expression()
 

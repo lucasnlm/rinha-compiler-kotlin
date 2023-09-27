@@ -61,15 +61,13 @@ class RinhaGrammarTest {
             "let k = fn (n) => { n }" to Expression.Let(
                 name = "k",
                 value = Expression.Function(
-                    name = null,
                     parameters = listOf("n"),
                     value = listOf(Expression.Var("n")),
                 ),
             ),
-            "let l = fn foo(z) => { z }" to Expression.Let(
+            "let l = fn (z) => { z }" to Expression.Let(
                 name = "l",
                 value = Expression.Function(
-                    name = "foo",
                     parameters = listOf("z"),
                     value = listOf(Expression.Var("z")),
                 ),
@@ -107,7 +105,10 @@ class RinhaGrammarTest {
                 ),
             "if (foo(10)) { 1 } else { 2 }" to
                 Expression.If(
-                    condition = Expression.Call(Expression.Var("foo"), listOf(Expression.IntValue(10))),
+                    condition = Expression.Call(
+                        callee = Expression.Var("foo"),
+                        arguments = listOf(Expression.IntValue(10)),
+                    ),
                     then = listOf(Expression.IntValue(1)),
                     otherwise = listOf(Expression.IntValue(2)),
                 ),
@@ -122,37 +123,31 @@ class RinhaGrammarTest {
         mapOf(
             "fn (n) => { n }" to
                 Expression.Function(
-                    name = null,
                     parameters = listOf("n"),
                     value = listOf(Expression.Var("n")),
                 ),
             "fn (n) { n }" to
                 Expression.Function(
-                    name = null,
                     parameters = listOf("n"),
                     value = listOf(Expression.Var("n")),
                 ),
-            "fn foo(n) { n }" to
+            "fn (n) { n }" to
                 Expression.Function(
-                    name = "foo",
                     parameters = listOf("n"),
                     value = listOf(Expression.Var("n")),
                 ),
             "fn () => { n }" to
                 Expression.Function(
-                    name = null,
                     parameters = listOf(),
                     value = listOf(Expression.Var("n")),
                 ),
             "fn (x,y,z) => { x;y;z }" to
                 Expression.Function(
-                    name = null,
                     parameters = listOf("x", "y", "z"),
                     value = listOf(Expression.Var("x"), Expression.Var("y"), Expression.Var("z")),
                 ),
             "fn (x) { if (x) {1} else {2}}" to
                 Expression.Function(
-                    name = null,
                     parameters = listOf("x"),
                     value = listOf(
                         Expression.If(

@@ -43,7 +43,6 @@ class RinhaExamplesTest {
             Expression.Let(
                 name = "sum",
                 value = Expression.Function(
-                    name = null,
                     parameters = listOf("n"),
                     value = listOf(
                         Expression.If(

@@ -334,6 +334,49 @@ class ExpressionRunnerTest {
         }
     }
 
+    @Test
+    fun `test anon print`() {
+        testScript(
+            ast = HardcodedScripts.anomPrintAst,
+        ) {
+            assertEquals(1, output.size)
+            assertEquals("100", output.first())
+        }
+    }
+
+    @Test
+    fun `test impure print`() {
+        testScript(
+            ast = HardcodedScripts.impurePrintAst,
+        ) {
+            assertEquals(2, output.size)
+            assertEquals("10", output[0])
+            assertEquals("10", output[1])
+        }
+    }
+
+    @Test
+    fun `test context print`() {
+        testScript(
+            ast = HardcodedScripts.impurePrint2Ast,
+        ) {
+            assertEquals(3, output.size)
+            assertEquals("10", output[0])
+            assertEquals("20", output[1])
+            assertEquals("10", output[2])
+        }
+    }
+
+    @Test
+    fun `test loop oom`() {
+        testScript(
+            ast = HardcodedScripts.loopOomAst,
+        ) {
+            assertEquals(1, output.size)
+            assertEquals("2000", output.first())
+        }
+    }
+
     private fun testScript(
         ast: String? = null,
         source: String? = null,

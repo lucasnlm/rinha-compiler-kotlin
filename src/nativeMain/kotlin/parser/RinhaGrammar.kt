@@ -248,14 +248,13 @@ object RinhaGrammar : Grammar<List<Expression>>() {
      */
     private val functionDefinitionStatement: Parser<Expression.Function> by
         (
-            -FUN * optional(ID) * -LPAR * separatedTerms(
+            -FUN * -LPAR * separatedTerms(
                 ID,
                 COMMA,
                 acceptZero = true,
             ) * -RPAR * -optional(FUN_ARROW) * -LBRC * parser { statementsChain } * -RBRC
-            ).map { (name, args, functionBody) ->
+            ).map { (args, functionBody) ->
             Expression.Function(
-                name = name?.text,
                 parameters = args.map { it.text },
                 value = functionBody,
             )

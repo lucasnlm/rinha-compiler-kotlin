@@ -52,6 +52,7 @@ import parser.ExpressionJsonIds.LOCATION_FILENAME
 import parser.ExpressionJsonIds.LOCATION_START
 import parser.JsonObjectExt.array
 import parser.JsonObjectExt.obj
+import parser.JsonObjectExt.optValue
 import parser.JsonObjectExt.value
 
 object AstParser {
@@ -141,7 +142,7 @@ object AstParser {
     }
 
     private fun JsonObject.parseCallExpression(): Expression.Call {
-        val callee = obj(EXPRESSION_CALL_CALLEE).parseVarExpression()
+        val callee = obj(EXPRESSION_CALL_CALLEE).parseExpressionByKind()
         val arguments = array(EXPRESSION_CALL_ARGUMENTS)?.mapNotNull {
             it.jsonObject.parseExpressionByKind()
         } ?: throw AstParseException("invalid arguments at Call", tryGetLocation())
@@ -164,12 +165,20 @@ object AstParser {
         )
     }
 
+    private fun JsonObject.parseOptionalVarExpression(): Expression.Var? {
+        return optValue(EXPRESSION_VAR_TEXT)?.let {
+            Expression.Var(
+                name = it,
+            )
+        }
+    }
+
     private fun JsonObject.parseBinaryExpression(): Expression.Binary {
         val left = expr(EXPRESSION_BINARY_LEFT)
         val right = expr(EXPRESSION_BINARY_RIGHT)
         val operator = value(EXPRESSION_BINARY_OPERATOR)
 
-        if (BinaryOperator.entries.find { it.name == operator } == null) {
+        if (BinaryOperator.values().find { it.name == operator } == null) {
             throw AstParseException("invalid operator '$operator' at Binary", tryGetLocation())
         }
 
@@ -193,10 +202,9 @@ object AstParser {
     }
 
     private fun JsonObject.parseFunctionExpression(): Expression.Function {
-        val name = optName()
         val parameters = array(EXPRESSION_FUNCTION_PARAMS)?.mapNotNull {
-            it.jsonObject.value(EXPRESSION_FUNCTION_PARAM_NAME)
-        } ?: throw AstParseException("invalid parameters at Function", tryGetLocation())
+            it.jsonObject.optValue(EXPRESSION_FUNCTION_PARAM_NAME)
+        } ?: listOf()
 
         var currentFunctionExpr: JsonObject? = obj(EXPRESSION_FUNCTION_VALUE)
         val expressions = mutableListOf<Expression>()
@@ -209,7 +217,6 @@ object AstParser {
         } while (currentFunctionExpr != null)
 
         return Expression.Function(
-            name = name,
             parameters = parameters,
             value = expressions,
         )
@@ -238,10 +245,6 @@ object AstParser {
                 fileName = fileName,
             )
         }
-    }
-
-    private fun JsonObject.optName(): String? {
-        return get(EXPRESSION_NAME)?.jsonPrimitive?.content
     }
 
     private fun JsonObject.next(): JsonObject? {

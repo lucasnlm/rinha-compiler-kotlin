@@ -1,5 +1,6 @@
 package repl
 
+import AppName
 import runner.ExpressionRunner
 import runner.RunTimeContext
 
@@ -9,7 +10,7 @@ import runner.RunTimeContext
 object ReplManager {
     fun run() {
         """
-        Kotlin Rinha Interpreter
+        ${AppName.name}
         ------------------------
           '!q' to exit.
           '!s' to see the variable scope.

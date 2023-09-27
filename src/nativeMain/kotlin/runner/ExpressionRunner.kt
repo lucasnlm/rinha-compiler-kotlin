@@ -120,7 +120,11 @@ class ExpressionRunner(
         runCatching {
             result = expressions.runExpressionsWith(context)
         }.onFailure {
-            tryAgain = true
+            if (runtimeContext.output.isEmpty()) {
+                tryAgain = true
+            } else {
+                throw it
+            }
         }
 
         if (tryAgain && runtimeContext.fallbackOptimization) {
@@ -452,8 +456,12 @@ class ExpressionRunner(
     private fun Expression.Call.callFunction(
         context: FunctionContext,
     ): Any? {
-        val callerName = callee.name
-        val target = context.scope[callerName] ?: runtimeContext.variables[callerName]
+        val target = callee.runExpression(context)
+        val callerName = if (callee is Expression.Var) {
+            callee.name
+        } else {
+            target.hashCode().toString()
+        }
         return when (target) {
             null -> {
                 throw RuntimeException("function '$callerName' is not defined")
@@ -494,7 +502,7 @@ class ExpressionRunner(
                     recursiveCall = recursiveCallDepth,
                 )
                 val resolvedArguments = target.parameters.mapIndexed { index: Int, param: String ->
-                    param to arguments[index].runExpression(newFunctionContext)
+                    param to arguments.getOrNull(index)?.runExpression(newFunctionContext)
                 }
                 var newScope = target.scopeCopy.toMutableMap().apply { putAll(resolvedArguments) }
 
@@ -502,13 +510,14 @@ class ExpressionRunner(
                     return Accumulator(newScope)
                 }
 
+                val outputBefore = runtimeContext.output.size
                 val cached = if (runtimeContext.cacheEnabled && !context.canTailCallOptimize) {
                     runtimeContext.functionCache[callerName]?.get(newScope.toString())
                 } else {
                     null
                 }
 
-                val isTailCallOptimizable = checkTailRecursive(this, target.value)
+                val isTailCallOptimizable = checkTailRecursive(callerName, target.value)
                 var itResult: Any? = null
                 var accumulator: Accumulator? = null
 
@@ -528,7 +537,11 @@ class ExpressionRunner(
                         .fold<Expression, Any?>(null) { _, functionExpression ->
                             functionExpression.runExpression(iterationContext)
                         }.also {
-                            if (runtimeContext.cacheEnabled && !isTailCallOptimizable) {
+                            // If the output size changed, it means that the function is impure
+                            val newOutput = runtimeContext.output.size
+                            val produceNewOutput = (newOutput != outputBefore)
+
+                            if (runtimeContext.cacheEnabled && !isTailCallOptimizable && !produceNewOutput) {
                                 val cacheMap = runtimeContext.functionCache[callerName] ?: mutableMapOf()
                                 cacheMap[newScope.toString()] = it
                                 runtimeContext.functionCache[callerName] = cacheMap
@@ -556,13 +569,12 @@ class ExpressionRunner(
     }
 
     private fun checkTailRecursive(
-        caller: Expression.Call,
+        callerName: String,
         expressions: List<Expression>,
     ): Boolean {
         var result = false
 
         if (expressions.isNotEmpty()) {
-            val callerName = caller.callee.name
             var count = 0
             for (expr in expressions) {
                 count += expr.findCalls(callerName)
@@ -581,7 +593,7 @@ class ExpressionRunner(
     ): Int {
         var count = 0
 
-        if (this is Expression.Call && callee.name == callerName) {
+        if (this is Expression.Call && callee is Expression.Var && callee.name == callerName) {
             count++
         } else if (this is Expression.Binary) {
             count += left.findCalls(callerName)

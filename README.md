@@ -79,5 +79,3 @@ docker run -it rinha:Dockerfile /var/rinha/test.rinha
 # Example to run REPL:
 docker run -it rinha:Dockerfile
 ```
-
-You can also call `rinha file.rinha` to generate a new Json.

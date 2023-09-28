@@ -187,6 +187,20 @@ class ExpressionRunnerTest {
     }
 
     @Test
+    fun `test with tuples`() {
+        testScript(
+            ast = HardcodedScripts.testWithTuplesAst,
+        ) {
+            assertEquals(variables["assert1"], "a")
+            assertEquals(variables["assert2"], "b")
+            assertEquals(variables["assert3"], "c")
+            assertEquals(variables["assert4"], "d")
+            assertEquals(variables["assert5"], "efg")
+            assertEquals("done", output.first())
+        }
+    }
+
+    @Test
     fun `test custom sum with multiplication script`() {
         testScript(
             ast = HardcodedScripts.sumMulSourceAst,

@@ -1,5 +1,6 @@
 package runner
 
+import Output
 import expressions.Expression
 import mocks.AstHelper
 import mocks.HardcodedScripts
@@ -364,7 +365,7 @@ class ExpressionRunnerTest {
     }
 
     @Test
-    fun `test fibtail with closure source`() {
+    fun `test fibtail with closure source 10`() {
         testScript(
             ast = HardcodedScripts.fibtailClosureAstSource,
         ) {
@@ -380,6 +381,16 @@ class ExpressionRunnerTest {
         ) {
             assertEquals(1, output.size)
             assertEquals("1950399", output.first())
+        }
+    }
+
+    @Test
+    fun `test function scope`() {
+        testScript(
+            ast = HardcodedScripts.functionScopeAst,
+        ) {
+            assertEquals(1, output.size)
+            assertEquals("1", output.first())
         }
     }
 
@@ -444,6 +455,7 @@ class ExpressionRunnerTest {
         block: RunTimeContext.() -> Unit,
     ) {
         ast?.let {
+            Output.print("AST output:")
             testScriptFromAst(
                 fallbackOptimization = fallbackOptimization,
                 runtimeOptimization = runtimeOptimization,
@@ -454,6 +466,7 @@ class ExpressionRunnerTest {
         }
 
         source?.let {
+            Output.print("Source output:")
             testScriptFromSource(
                 fallbackOptimization = fallbackOptimization,
                 runtimeOptimization = runtimeOptimization,

@@ -178,7 +178,7 @@ object AstParser {
         val right = expr(EXPRESSION_BINARY_RIGHT)
         val operator = value(EXPRESSION_BINARY_OPERATOR)
 
-        if (BinaryOperator.values().find { it.name == operator } == null) {
+        if (BinaryOperator.entries.find { it.name == operator } == null) {
             throw AstParseException("invalid operator '$operator' at Binary", tryGetLocation())
         }
 
@@ -201,7 +201,7 @@ object AstParser {
         )
     }
 
-    private fun JsonObject.parseFunctionExpression(): Expression.Function {
+    private fun JsonObject.parseFunctionExpression(): Expression {
         val parameters = array(EXPRESSION_FUNCTION_PARAMS)?.mapNotNull {
             it.jsonObject.optValue(EXPRESSION_FUNCTION_PARAM_NAME)
         } ?: listOf()

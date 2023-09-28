@@ -14,7 +14,9 @@ object RunTimeOptimizations {
         exprCall: Expression.Call,
         expressions: List<Expression>,
     ): Any? {
-        return tailOptSimpleFn(exprCall, expressions) ?: checkFibonacci(exprCall, expressions)
+        return runCatching {
+            tailOptSimpleFn(exprCall, expressions) ?: checkFibonacci(exprCall, expressions)
+        }.getOrNull()
     }
 
     private fun tailOptSimpleFn(

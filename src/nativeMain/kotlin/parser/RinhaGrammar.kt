@@ -113,7 +113,7 @@ object RinhaGrammar : Grammar<List<Expression>>() {
             (FALSE asJust Expression.BoolValue(value = false))
 
     /** Handle function calls. E.g: foo(), bar(1, 2). */
-    private val funCall: Parser<Expression> by
+    private val functionCall: Parser<Expression> by
         (ID * -LPAR * separatedTerms(parser { statement }, COMMA, acceptZero = true) * -RPAR).map { (name, args) ->
             when (name.text) {
                 RESERVED_FN_PRINT -> {
@@ -156,7 +156,7 @@ object RinhaGrammar : Grammar<List<Expression>>() {
      * This is helper to join all the terms together.
      **/
     private val nonIndexedTerm: Parser<Expression> by
-        const or funCall or variable or parenTerm or stringLiteral or tupleLiteral
+        const or functionCall or variable or parenTerm or stringLiteral or tupleLiteral
 
     /** In my case I can simplify term = nonIndexedTerm. */
     private val term = nonIndexedTerm

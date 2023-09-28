@@ -438,7 +438,12 @@ class ExpressionRunner(
         context: FunctionContext,
     ): Any {
         // Function will be executed only when called.
-        return copy(scopeCopy = context.scope + runtimeContext.variables)
+        return copy(
+            scopeCopy = mutableMapOf<String, Any?>().apply {
+                putAll(context.scope)
+                putAll(runtimeContext.variables)
+            },
+        )
     }
 
     private fun Expression.Print.printExpr(
@@ -517,15 +522,8 @@ class ExpressionRunner(
                 }
                 var newScope = target.scopeCopy.toMutableMap().apply { putAll(resolvedArguments) }
 
-                if (context.canTailCallOptimize && context.runtimeOptimization) {
+                if (context.canTailCallOptimize && context.runtimeOptimization && context.root == callerName) {
                     return Accumulator(newScope)
-                }
-
-                val outputBefore = runtimeContext.output.size
-                val cached = if (runtimeContext.cacheEnabled && !context.canTailCallOptimize) {
-                    runtimeContext.functionCache[callerName]?.get(newScope.toString())
-                } else {
-                    null
                 }
 
                 val isTailCallOptimizable = checkTailRecursive(callerName, target.value)
@@ -543,20 +541,10 @@ class ExpressionRunner(
                         canTailCallOptimize = isTailCallOptimizable,
                     )
 
-                    itResult = cached ?: target
+                    itResult = target
                         .value
                         .fold<Expression, Any?>(null) { _, functionExpression ->
                             functionExpression.runExpression(iterationContext)
-                        }.also {
-                            // If the output size changed, it means that the function is impure
-                            val newOutput = runtimeContext.output.size
-                            val produceNewOutput = (newOutput != outputBefore)
-
-                            if (runtimeContext.cacheEnabled && !isTailCallOptimizable && !produceNewOutput) {
-                                val cacheMap = runtimeContext.functionCache[callerName] ?: mutableMapOf()
-                                cacheMap[newScope.toString()] = it
-                                runtimeContext.functionCache[callerName] = cacheMap
-                            }
                         }
                 } while (itResult is Accumulator)
 

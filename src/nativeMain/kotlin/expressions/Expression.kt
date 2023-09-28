@@ -25,9 +25,9 @@ sealed class Expression {
         val value: List<Expression>,
         val scopeCopy: Map<String, Any?> = mapOf(),
     ) : Expression() {
-        override fun toString(): String {
-            return "<#closure>"
-        }
+//        override fun toString(): String {
+//            return "<#closure>"
+//        }
     }
 
     /**

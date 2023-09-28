@@ -201,6 +201,20 @@ class ExpressionRunnerTest {
     }
 
     @Test
+    fun `test fib with closures`() {
+        testScript(
+            ast = HardcodedScripts.fibWithClosuresAst,
+        ) {
+            assertEquals(1, variables.size)
+            assertEquals(1, output.size)
+            assertTrue {
+                variables["fib"] is Expression.Function
+            }
+            assertEquals("55", output.first())
+        }
+    }
+
+    @Test
     fun `test custom sum with multiplication script`() {
         testScript(
             ast = HardcodedScripts.sumMulSourceAst,
@@ -346,6 +360,15 @@ class ExpressionRunnerTest {
             source = HardcodedScripts.fibtailSource,
         ) {
             assertEquals("873876091", output.first())
+        }
+    }
+
+    @Test
+    fun `test fibtail with closure source`() {
+        testScript(
+            ast = HardcodedScripts.fibtailClosureAstSource,
+        ) {
+            assertEquals("55", output.first())
         }
     }
 

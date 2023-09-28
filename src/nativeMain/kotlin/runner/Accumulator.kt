@@ -15,13 +15,19 @@ data class Accumulator(
     fun resolve(accValue: Accumulator): Accumulator {
         return when (this.value) {
             is Int -> {
-                copy(value = accValue.asInt() + (this.value as Int) * accValue.sign)
+                copy(
+                    value = accValue.asInt() + (this.value as Int) * accValue.sign,
+                )
             }
             is String -> {
-                copy(value = (this.value as String) + accValue.asString())
+                copy(
+                    value = (this.value as String) + accValue.asString(),
+                )
             }
             else -> {
-                copy(value = accValue.value)
+                copy(
+                    value = accValue.value,
+                )
             }
         }
     }
@@ -52,6 +58,10 @@ data class Accumulator(
         }.also {
             this.value = it
         }
+    }
+
+    override fun toString(): String {
+        return "Accumulator(sign=$sign, value=$value)"
     }
 
     companion object {

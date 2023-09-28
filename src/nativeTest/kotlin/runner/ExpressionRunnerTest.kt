@@ -6,12 +6,7 @@ import mocks.AstHelper
 import mocks.HardcodedScripts
 import parser.RinhaGrammar
 import platform.posix.NAN
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class ExpressionRunnerTest {
     @Test
@@ -357,8 +352,16 @@ class ExpressionRunnerTest {
     @Test
     fun `test fibtail source`() {
         testScript(
-            ast = HardcodedScripts.fibtailSourceAst,
             source = HardcodedScripts.fibtailSource,
+        ) {
+            assertEquals("873876091", output.first())
+        }
+    }
+
+    @Test
+    fun `test fibtail ast`() {
+        testScript(
+            ast = HardcodedScripts.fibtailSourceAst,
         ) {
             assertEquals("873876091", output.first())
         }
@@ -368,6 +371,16 @@ class ExpressionRunnerTest {
     fun `test fibtail with closure source 10`() {
         testScript(
             ast = HardcodedScripts.fibtailClosureAstSource,
+        ) {
+            assertEquals("55", output.first())
+        }
+    }
+
+    @Test
+    @Ignore
+    fun `test fibtail with closure source 100000`() {
+        testScript(
+            ast = HardcodedScripts.fibtailClosureAstSource2,
         ) {
             assertEquals("55", output.first())
         }

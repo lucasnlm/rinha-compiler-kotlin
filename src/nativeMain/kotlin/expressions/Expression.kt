@@ -25,10 +25,13 @@ sealed class Expression {
         val parameters: List<String>,
         val value: List<Expression>,
         val scopeCopy: Map<String, Any?> = mapOf(),
-        val inlineFn: Boolean = false,
     ) : Expression() {
         override fun toString(): String {
             return "<#closure>"
+        }
+
+        fun isInline(): Boolean {
+            return parameters.isEmpty() && value.size == 1
         }
     }
 

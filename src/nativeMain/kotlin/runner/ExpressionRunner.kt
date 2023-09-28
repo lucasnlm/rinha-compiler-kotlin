@@ -257,7 +257,7 @@ class ExpressionRunner(
         return if (left == 0 || left == 0.0) {
             0
         } else {
-            val right = right.runExpression(context.copy(canTailCallOptimize = false))
+            val right = right.runExpression(context.copy(tailCall = null))
             if (left is Int && right is Int) {
                 left * right
             } else {
@@ -488,6 +488,9 @@ class ExpressionRunner(
             (target.parameters.size != this.arguments.size) -> {
                 throw RuntimeException("missing param at '$callerName' call")
             }
+            target.isInline() -> {
+                target.value.first().runExpression(context)
+            }
             else -> {
                 // Check for some predefined optimizations
                 if (context.runtimeOptimization && context.recursiveCall < 2) {
@@ -522,11 +525,11 @@ class ExpressionRunner(
                 }
                 var newScope = target.scopeCopy.toMutableMap().apply { putAll(resolvedArguments) }
 
-                if (context.canTailCallOptimize && context.runtimeOptimization && context.root == callerName) {
+                if (context.tailCall == callerName && context.runtimeOptimization && context.root == callerName) {
                     return Accumulator(newScope)
                 }
 
-                val isTailCallOptimizable = checkTailRecursive(callerName, target.value)
+                val tailCallOptimizable = checkTailRecursive(callerName, target.value)
                 var itResult: Any? = null
                 var accumulator: Accumulator? = null
 
@@ -538,7 +541,7 @@ class ExpressionRunner(
 
                     val iterationContext = newFunctionContext.copy(
                         scope = newScope,
-                        canTailCallOptimize = isTailCallOptimizable,
+                        tailCall = newFunctionContext.tailCall ?: tailCallOptimizable,
                     )
 
                     itResult = target
@@ -570,7 +573,7 @@ class ExpressionRunner(
     private fun checkTailRecursive(
         callerName: String,
         expressions: List<Expression>,
-    ): Boolean {
+    ): String? {
         var result = false
 
         if (expressions.isNotEmpty()) {
@@ -584,7 +587,7 @@ class ExpressionRunner(
             result = (count == 1)
         }
 
-        return result
+        return if (result) callerName else null
     }
 
     private fun Expression.findCalls(

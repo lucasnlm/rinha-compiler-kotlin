@@ -284,6 +284,188 @@ object HardcodedScripts {
         {"name":"test.rinha","expression":{"kind":"Let","name":{"text":"fibrec","location":{"start":4,"end":10,"filename":"test.rinha"}},"value":{"kind":"Function","parameters":[{"text":"n","location":{"start":17,"end":18,"filename":"test.rinha"}},{"text":"k1","location":{"start":20,"end":22,"filename":"test.rinha"}},{"text":"k2","location":{"start":24,"end":26,"filename":"test.rinha"}}],"value":{"kind":"If","condition":{"kind":"Binary","lhs":{"kind":"Var","text":"n","location":{"start":47,"end":48,"filename":"test.rinha"}},"op":"Eq","rhs":{"kind":"Int","value":0,"location":{"start":52,"end":53,"filename":"test.rinha"}},"location":{"start":47,"end":53,"filename":"test.rinha"}},"then":{"kind":"Var","text":"k1","location":{"start":69,"end":71,"filename":"test.rinha"}},"otherwise":{"kind":"If","condition":{"kind":"Binary","lhs":{"kind":"Var","text":"n","location":{"start":107,"end":108,"filename":"test.rinha"}},"op":"Eq","rhs":{"kind":"Int","value":1,"location":{"start":112,"end":113,"filename":"test.rinha"}},"location":{"start":107,"end":113,"filename":"test.rinha"}},"then":{"kind":"Var","text":"k2","location":{"start":131,"end":133,"filename":"test.rinha"}},"otherwise":{"kind":"Call","callee":{"kind":"Var","text":"fibrec","location":{"start":169,"end":175,"filename":"test.rinha"}},"arguments":[{"kind":"Binary","lhs":{"kind":"Var","text":"n","location":{"start":176,"end":177,"filename":"test.rinha"}},"op":"Sub","rhs":{"kind":"Int","value":1,"location":{"start":180,"end":181,"filename":"test.rinha"}},"location":{"start":176,"end":181,"filename":"test.rinha"}},{"kind":"Var","text":"k2","location":{"start":183,"end":185,"filename":"test.rinha"}},{"kind":"Binary","lhs":{"kind":"Var","text":"k1","location":{"start":187,"end":189,"filename":"test.rinha"}},"op":"Add","rhs":{"kind":"Var","text":"k2","location":{"start":192,"end":194,"filename":"test.rinha"}},"location":{"start":187,"end":194,"filename":"test.rinha"}}],"location":{"start":169,"end":195,"filename":"test.rinha"}},"location":{"start":103,"end":209,"filename":"test.rinha"}},"location":{"start":43,"end":221,"filename":"test.rinha"}},"location":{"start":13,"end":231,"filename":"test.rinha"}},"next":{"kind":"Let","name":{"text":"fib","location":{"start":245,"end":248,"filename":"test.rinha"}},"value":{"kind":"Function","parameters":[{"text":"n","location":{"start":255,"end":256,"filename":"test.rinha"}}],"value":{"kind":"Call","callee":{"kind":"Var","text":"fibrec","location":{"start":273,"end":279,"filename":"test.rinha"}},"arguments":[{"kind":"Var","text":"n","location":{"start":280,"end":281,"filename":"test.rinha"}},{"kind":"Int","value":0,"location":{"start":283,"end":284,"filename":"test.rinha"}},{"kind":"Int","value":1,"location":{"start":286,"end":287,"filename":"test.rinha"}}],"location":{"start":273,"end":288,"filename":"test.rinha"}},"location":{"start":251,"end":298,"filename":"test.rinha"}},"next":{"kind":"Print","value":{"kind":"Call","callee":{"kind":"Var","text":"fib","location":{"start":314,"end":317,"filename":"test.rinha"}},"arguments":[{"kind":"Int","value":100000,"location":{"start":318,"end":324,"filename":"test.rinha"}}],"location":{"start":314,"end":325,"filename":"test.rinha"}},"location":{"start":308,"end":326,"filename":"test.rinha"}},"location":{"start":241,"end":326,"filename":"test.rinha"}},"location":{"start":0,"end":326,"filename":"test.rinha"}},"location":{"start":0,"end":326,"filename":"test.rinha"}}
     """.trimIndent()
 
+    val functionScopeAst2 = """
+        {
+          "name": "examples/closure.rinha",
+          "expression": {
+            "kind": "Let",
+            "name": {
+              "text": "f",
+              "location": {
+                "start": 4,
+                "end": 5,
+                "filename": "examples/closure.rinha"
+              }
+            },
+            "value": {
+              "kind": "Function",
+              "parameters": [],
+              "value": {
+                "kind": "Let",
+                "name": {
+                  "text": "x",
+                  "location": {
+                    "start": 25,
+                    "end": 26,
+                    "filename": "examples/closure.rinha"
+                  }
+                },
+                "value": {
+                  "kind": "Int",
+                  "value": 123,
+                  "location": {
+                    "start": 29,
+                    "end": 32,
+                    "filename": "examples/closure.rinha"
+                  }
+                },
+                "next": {
+                  "kind": "Function",
+                  "parameters": [],
+                  "value": {
+                    "kind": "Function",
+                    "parameters": [],
+                    "value": {
+                      "kind": "Var",
+                      "text": "x",
+                      "location": {
+                        "start": 68,
+                        "end": 69,
+                        "filename": "examples/closure.rinha"
+                      }
+                    },
+                    "location": {
+                      "start": 51,
+                      "end": 75,
+                      "filename": "examples/closure.rinha"
+                    }
+                  },
+                  "location": {
+                    "start": 36,
+                    "end": 79,
+                    "filename": "examples/closure.rinha"
+                  }
+                },
+                "location": {
+                  "start": 21,
+                  "end": 79,
+                  "filename": "examples/closure.rinha"
+                }
+              },
+              "location": {
+                "start": 8,
+                "end": 81,
+                "filename": "examples/closure.rinha"
+              }
+            },
+            "next": {
+              "kind": "Let",
+              "name": {
+                "text": "g",
+                "location": {
+                  "start": 87,
+                  "end": 88,
+                  "filename": "examples/closure.rinha"
+                }
+              },
+              "value": {
+                "kind": "Call",
+                "callee": {
+                  "kind": "Var",
+                  "text": "f",
+                  "location": {
+                    "start": 91,
+                    "end": 92,
+                    "filename": "examples/closure.rinha"
+                  }
+                },
+                "arguments": [],
+                "location": {
+                  "start": 91,
+                  "end": 94,
+                  "filename": "examples/closure.rinha"
+                }
+              },
+              "next": {
+                "kind": "Let",
+                "name": {
+                  "text": "h",
+                  "location": {
+                    "start": 100,
+                    "end": 101,
+                    "filename": "examples/closure.rinha"
+                  }
+                },
+                "value": {
+                  "kind": "Call",
+                  "callee": {
+                    "kind": "Var",
+                    "text": "g",
+                    "location": {
+                      "start": 104,
+                      "end": 105,
+                      "filename": "examples/closure.rinha"
+                    }
+                  },
+                  "arguments": [],
+                  "location": {
+                    "start": 104,
+                    "end": 107,
+                    "filename": "examples/closure.rinha"
+                  }
+                },
+                "next": {
+                  "kind": "Print",
+                  "value": {
+                    "kind": "Call",
+                    "callee": {
+                      "kind": "Var",
+                      "text": "h",
+                      "location": {
+                        "start": 115,
+                        "end": 116,
+                        "filename": "examples/closure.rinha"
+                      }
+                    },
+                    "arguments": [],
+                    "location": {
+                      "start": 115,
+                      "end": 118,
+                      "filename": "examples/closure.rinha"
+                    }
+                  },
+                  "location": {
+                    "start": 109,
+                    "end": 119,
+                    "filename": "examples/closure.rinha"
+                  }
+                },
+                "location": {
+                  "start": 96,
+                  "end": 119,
+                  "filename": "examples/closure.rinha"
+                }
+              },
+              "location": {
+                "start": 83,
+                "end": 119,
+                "filename": "examples/closure.rinha"
+              }
+            },
+            "location": {
+              "start": 0,
+              "end": 119,
+              "filename": "examples/closure.rinha"
+            }
+          },
+          "location": {
+            "start": 0,
+            "end": 119,
+            "filename": "examples/closure.rinha"
+          }
+        }
+    """.trimIndent()
+
     val functionScopeAst = """
         {
           "name": "examples/closure.rinha",

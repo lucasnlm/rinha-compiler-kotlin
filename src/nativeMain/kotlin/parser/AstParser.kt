@@ -216,6 +216,8 @@ object AstParser {
             currentFunctionExpr = currentFunctionExpr?.next()
         } while (currentFunctionExpr != null)
 
+        val inlineFn = parameters.isEmpty() && expressions.size == 1
+
         return Expression.Function(
             parameters = parameters,
             value = expressions,

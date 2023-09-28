@@ -395,6 +395,16 @@ class ExpressionRunnerTest {
     }
 
     @Test
+    fun `test function scope 2`() {
+        testScript(
+            ast = HardcodedScripts.functionScopeAst2,
+        ) {
+            assertEquals(1, output.size)
+            assertEquals("123", output.first())
+        }
+    }
+
+    @Test
     fun `test resStringSource source`() {
         testScript(
             ast = HardcodedScripts.resStringSourceAst,

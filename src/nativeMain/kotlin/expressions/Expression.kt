@@ -19,11 +19,13 @@ sealed class Expression {
      * @property parameters The parameters of the function.
      * @property value The value of the function.
      * @property scopeCopy The scope copy of the function.
+     * @property inlineFn Whether the function is inline or not.
      */
     data class Function(
         val parameters: List<String>,
         val value: List<Expression>,
         val scopeCopy: Map<String, Any?> = mapOf(),
+        val inlineFn: Boolean = false,
     ) : Expression() {
         override fun toString(): String {
             return "<#closure>"

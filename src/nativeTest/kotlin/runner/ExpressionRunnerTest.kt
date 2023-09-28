@@ -166,6 +166,16 @@ class ExpressionRunnerTest {
     }
 
     @Test
+    fun `test custom sum negative script`() {
+        testScript(
+            source = HardcodedScripts.sumCustomNegSource,
+        ) {
+            assertEquals(1, output.size)
+            assertEquals("500", output.first())
+        }
+    }
+
+    @Test
     fun `test custom sum with multiplication script`() {
         testScript(
             ast = HardcodedScripts.sumMulSourceAst,
@@ -318,6 +328,7 @@ class ExpressionRunnerTest {
     fun `test doubleTryErrorSource`() {
         testScript(
             source = HardcodedScripts.doubleTryErrorSource,
+            fallbackOptimization = true,
         ) {
             assertEquals(1, output.size)
             assertEquals("1950399", output.first())
@@ -381,25 +392,43 @@ class ExpressionRunnerTest {
         ast: String? = null,
         source: String? = null,
         runtimeOptimization: Boolean = true,
+        fallbackOptimization: Boolean = false,
         block: RunTimeContext.() -> Unit,
     ) {
         ast?.let {
-            testScriptFromAst(ast) {
+            testScriptFromAst(
+                fallbackOptimization = fallbackOptimization,
+                runtimeOptimization = runtimeOptimization,
+                target = ast,
+            ) {
                 block(this)
             }
         }
 
         source?.let {
-            testScriptFromSource(runtimeOptimization, source) {
+            testScriptFromSource(
+                fallbackOptimization = fallbackOptimization,
+                runtimeOptimization = runtimeOptimization,
+                source = source,
+            ) {
                 block(this)
             }
         }
     }
 
-    private fun testScriptFromAst(target: String, block: RunTimeContext.() -> Unit) {
+    private fun testScriptFromAst(
+        target: String,
+        runtimeOptimization: Boolean = true,
+        fallbackOptimization: Boolean = false,
+        block: RunTimeContext.() -> Unit,
+    ) {
         val result = AstHelper.mockAst(content = target).getOrThrow()
         val runner = ExpressionRunner(
-            runtimeContext = RunTimeContext(isTesting = true),
+            runtimeContext = RunTimeContext(
+                isTesting = true,
+                runtimeOptimization = runtimeOptimization,
+                fallbackOptimization = fallbackOptimization,
+            ),
         )
         runner.runFromExpressions(result)
         block(runner.runtimeContext)
@@ -407,6 +436,7 @@ class ExpressionRunnerTest {
 
     private fun testScriptFromSource(
         runtimeOptimization: Boolean = true,
+        fallbackOptimization: Boolean = false,
         source: String,
         block: RunTimeContext.() -> Unit,
     ) {
@@ -415,6 +445,7 @@ class ExpressionRunnerTest {
             runtimeContext = RunTimeContext(
                 isTesting = true,
                 runtimeOptimization = runtimeOptimization,
+                fallbackOptimization = fallbackOptimization,
             ),
         )
 

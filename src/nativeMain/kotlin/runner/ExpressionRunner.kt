@@ -120,7 +120,7 @@ class ExpressionRunner(
         runCatching {
             result = expressions.runExpressionsWith(context)
         }.onFailure {
-            if (runtimeContext.output.isEmpty()) {
+            if (runtimeContext.output.isEmpty() && runtimeContext.fallbackOptimization) {
                 tryAgain = true
             } else {
                 throw it
@@ -272,6 +272,15 @@ class ExpressionRunner(
 
         return if (left is Int && right is Int) {
             left - right
+        } else if (left is Accumulator && right is Int) {
+            left.apply {
+                value = left.asInt() - right
+            }
+        } else if (right is Accumulator && left is Int) {
+            right.apply {
+                sign = -1
+                value = left + right.asInt()
+            }
         } else {
             throw RuntimeException("invalid sub expression")
         }
@@ -474,7 +483,7 @@ class ExpressionRunner(
             }
             else -> {
                 // Check for some predefined optimizations
-                if (context.runtimeOptimization) {
+                if (context.runtimeOptimization && context.recursiveCall < 2) {
                     RunTimeOptimizations.checkRunTimeOptimizations(
                         exprCall = this,
                         expressions = target.value,
@@ -552,7 +561,7 @@ class ExpressionRunner(
                 if (accumulator != null) {
                     when (itResult) {
                         is Int -> {
-                            itResult + accumulator.asInt()
+                            (itResult * accumulator.sign) + accumulator.asInt()
                         }
                         is String -> {
                             accumulator.asString() + itResult

@@ -3,12 +3,10 @@ package runner
 /**
  * Holds the value of a temporary call of a recursive function.
  * This is used to implement the Tail Call Optimization at runtime.
- *
- * @property scope The scope of the function call.
- * @property value The accumulated value of the function call.
  */
 data class Accumulator(
     val scope: Map<String, Any?> = mapOf(),
+    var sign: Int = 1,
     var value: Any? = null,
 ) {
     /**
@@ -17,7 +15,7 @@ data class Accumulator(
     fun resolve(accValue: Accumulator): Accumulator {
         return when (this.value) {
             is Int -> {
-                copy(value = (this.value as Int) + accValue.asInt())
+                copy(value = accValue.asInt() + (this.value as Int) * accValue.sign)
             }
             is String -> {
                 copy(value = (this.value as String) + accValue.asString())

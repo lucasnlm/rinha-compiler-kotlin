@@ -107,6 +107,18 @@ object HardcodedScripts {
         print (sum(1000))
     """.trimIndent()
 
+    val sumCustomNegSource = """
+        let sum = fn (z) => {
+          if (z != 1) {
+            z - sum(z - 1)
+          } else {
+            z
+          }
+        };
+
+        print (sum(1000))
+    """.trimIndent()
+
     val sumMulSourceAst = """
         {"name":"test.rinha","expression":{"kind":"Let","name":{"text":"sum","location":{"start":4,"end":7,"filename":"test.rinha"}},"value":{"kind":"Function","parameters":[{"text":"z","location":{"start":14,"end":15,"filename":"test.rinha"}}],"value":{"kind":"If","condition":{"kind":"Binary","lhs":{"kind":"Var","text":"z","location":{"start":30,"end":31,"filename":"test.rinha"}},"op":"Neq","rhs":{"kind":"Int","value":1,"location":{"start":35,"end":36,"filename":"test.rinha"}},"location":{"start":30,"end":36,"filename":"test.rinha"}},"then":{"kind":"Binary","lhs":{"kind":"Var","text":"z","location":{"start":44,"end":45,"filename":"test.rinha"}},"op":"Add","rhs":{"kind":"Binary","lhs":{"kind":"Int","value":2,"location":{"start":49,"end":50,"filename":"test.rinha"}},"op":"Mul","rhs":{"kind":"Call","callee":{"kind":"Var","text":"sum","location":{"start":53,"end":56,"filename":"test.rinha"}},"arguments":[{"kind":"Binary","lhs":{"kind":"Var","text":"z","location":{"start":57,"end":58,"filename":"test.rinha"}},"op":"Sub","rhs":{"kind":"Int","value":1,"location":{"start":61,"end":62,"filename":"test.rinha"}},"location":{"start":57,"end":62,"filename":"test.rinha"}}],"location":{"start":53,"end":63,"filename":"test.rinha"}},"location":{"start":49,"end":63,"filename":"test.rinha"}},"location":{"start":44,"end":64,"filename":"test.rinha"}},"otherwise":{"kind":"Var","text":"z","location":{"start":82,"end":83,"filename":"test.rinha"}},"location":{"start":26,"end":89,"filename":"test.rinha"}},"location":{"start":10,"end":91,"filename":"test.rinha"}},"next":{"kind":"Print","value":{"kind":"Call","callee":{"kind":"Var","text":"sum","location":{"start":101,"end":104,"filename":"test.rinha"}},"arguments":[{"kind":"Int","value":10,"location":{"start":105,"end":107,"filename":"test.rinha"}}],"location":{"start":101,"end":108,"filename":"test.rinha"}},"location":{"start":94,"end":109,"filename":"test.rinha"}},"location":{"start":0,"end":109,"filename":"test.rinha"}},"location":{"start":0,"end":109,"filename":"test.rinha"}}
     """.trimIndent()

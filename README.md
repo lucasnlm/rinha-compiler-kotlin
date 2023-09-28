@@ -72,10 +72,4 @@ You can also use the docker image to run the interpreter.
 ```bash
 docker build -t "rinha:Dockerfile" .
 docker run -it rinha:Dockerfile
-
-# Example:
-docker run -it rinha:Dockerfile /var/rinha/test.rinha
-
-# Example to run REPL:
-docker run -it rinha:Dockerfile
 ```

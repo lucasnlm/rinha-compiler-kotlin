@@ -1,5 +1,6 @@
 package runner
 
+import Output
 import com.github.h0tk3y.betterParse.parser.ParseException
 import expressions.BinaryOperator
 import expressions.Expression
@@ -18,16 +19,17 @@ class ExpressionRunner(
         return runCatching {
             RinhaGrammar.parseSource(source)
         }.onFailure {
-            if (it is ParseException) {
-                println("e: syntax error")
+            val message = if (it is ParseException) {
+                "syntax error"
             } else {
-                println("e: ${it.message}")
+                it.message
             }
+            Output.error(message)
         }.onSuccess { expressions ->
             doubleTryRun(expressions)?.also { response ->
                 val last = runtimeContext.output.lastOrNull()
                 if (last == null || last != response.toString()) {
-                    println(response.toString())
+                    Output.print(response.toString())
                 }
             }
         }.getOrNull()
@@ -59,7 +61,7 @@ class ExpressionRunner(
      */
     fun printGlobalScope() {
         if (runtimeContext.variables.isEmpty()) {
-            println("{}")
+            "{}"
         } else {
             runtimeContext.variables.map {
                 when (it.value) {
@@ -93,10 +95,10 @@ class ExpressionRunner(
                 }
             }.joinToString(prefix = "{\n", separator = ",\n", postfix = ",\n}") {
                 "  $it"
-            }.also {
-                if (!runtimeContext.isTesting && it.isNotBlank()) {
-                    println(it)
-                }
+            }
+        }.also {
+            if (!runtimeContext.isTesting && it.isNotBlank()) {
+                Output.print(it)
             }
         }
     }
@@ -446,7 +448,7 @@ class ExpressionRunner(
             value.first().runExpression(context).also {
                 val asString = it.toString()
                 runtimeContext.output.add(asString)
-                println(asString)
+                Output.print(asString)
             }
         } else {
             throw RuntimeException("'print' function can handle only one argument")

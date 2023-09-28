@@ -1,5 +1,6 @@
 package mocks
 
+import Output
 import expressions.Expression
 import io.JsonFileReader
 import okio.Path.Companion.toPath
@@ -31,7 +32,7 @@ object AstHelper {
                 fileContent = fileContent,
             ).getOrThrow()
         }.onFailure {
-            println("e: ${it.message}")
+            Output.error(it.message)
         }
     }
 }

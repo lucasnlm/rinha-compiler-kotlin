@@ -1,3 +1,4 @@
 object AppName {
-    const val name = "Kotlin Rinha Interpreter 1.2.4"
+    const val version = "1.2.5"
+    const val name = "Kotlin Rinha Interpreter $version"
 }

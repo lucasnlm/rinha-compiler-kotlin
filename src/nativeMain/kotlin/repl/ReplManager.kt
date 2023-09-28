@@ -1,6 +1,7 @@
 package repl
 
 import AppName
+import Output
 import runner.ExpressionRunner
 import runner.RunTimeContext
 
@@ -11,10 +12,12 @@ object ReplManager {
     fun run() {
         """
         ${AppName.name}
-        ------------------------
+        ------------------------------
           '!q' to exit.
           '!s' to see the variable scope.
-        """.trimIndent().let(::println)
+        """.trimIndent().let {
+            Output.print(it)
+        }
 
         val runner = ExpressionRunner(
             runtimeContext = RunTimeContext(),
@@ -45,7 +48,7 @@ object ReplManager {
                             runFromSource(input)
                         }
                     }.onFailure {
-                        println("e: ${it.message}")
+                        Output.error(it.message)
                     }
                 }
             }

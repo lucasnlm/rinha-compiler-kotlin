@@ -30,7 +30,7 @@ object FileRunner {
             // Create a new Runner to run the expressions
             ExpressionRunner().runFromExpressions(expressions)
         }.onFailure {
-            println("e: ${it.message}")
+            Output.error(it.message)
         }
     }
 
@@ -52,7 +52,7 @@ object FileRunner {
                 runFromSource(fileContent)
             }
         }.onFailure {
-            println("e: ${it.message}")
+            Output.error(it.message)
         }
     }
 }

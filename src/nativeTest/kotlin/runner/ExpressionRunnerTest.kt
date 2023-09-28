@@ -176,6 +176,17 @@ class ExpressionRunnerTest {
     }
 
     @Test
+    fun `test multiplication with rec`() {
+        testScript(
+            source = HardcodedScripts.mulTestSource,
+            ast = HardcodedScripts.mulTestSourceAst,
+        ) {
+            assertEquals(1, output.size)
+            assertEquals("3628800", output.first())
+        }
+    }
+
+    @Test
     fun `test custom sum with multiplication script`() {
         testScript(
             ast = HardcodedScripts.sumMulSourceAst,

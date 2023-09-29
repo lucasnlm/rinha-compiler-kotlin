@@ -6,7 +6,13 @@ import mocks.AstHelper
 import mocks.HardcodedScripts
 import parser.RinhaGrammar
 import platform.posix.NAN
-import kotlin.test.*
+import kotlin.test.Ignore
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ExpressionRunnerTest {
     @Test
@@ -22,6 +28,21 @@ class ExpressionRunnerTest {
             assertEquals("Hello", variables["d"])
             assertEquals(Pair(1, 2), variables["e"])
             assertNull(variables["z"])
+        }
+    }
+
+    @Test
+    fun `test let print literals`() {
+        testScript(
+            source = HardcodedScripts.pritValuesSource,
+        ) {
+            assertEquals("10", output[0])
+            assertEquals("false", output[1])
+            assertEquals("true", output[2])
+            assertEquals("hello", output[3])
+            assertEquals("(1, 2)", output[4])
+            assertEquals("(hello, world)", output[5])
+            assertEquals("<#closure>", output[6])
         }
     }
 
@@ -117,6 +138,19 @@ class ExpressionRunnerTest {
                 variables["fib"] is Expression.Function
             }
             assertEquals("55", output.first())
+        }
+    }
+
+    @Test
+    fun `test ifConditionNotBoolean`() {
+        runCatching {
+            testScript(
+                source = HardcodedScripts.ifConditionNotBoolean,
+            )
+        }.onFailure {
+            assertEquals("condition of 'if' expression must be a boolean", it.message)
+        }.onSuccess {
+            assertFalse(true)
         }
     }
 
@@ -387,6 +421,19 @@ class ExpressionRunnerTest {
     }
 
     @Test
+    fun `test addTupleSource`() {
+        testScript(
+            source = HardcodedScripts.addTupleSource,
+        ) {
+            assertEquals("6", output[0])
+            assertEquals("5", output[1])
+            assertEquals("4", output[2])
+            assertEquals("3", output[3])
+            assertEquals("2", output[4])
+        }
+    }
+
+    @Test
     fun `test insertionSortSource`() {
         testScript(
             ast = HardcodedScripts.insertionSortAst,
@@ -486,27 +533,31 @@ class ExpressionRunnerTest {
         source: String? = null,
         runtimeOptimization: Boolean = true,
         fallbackOptimization: Boolean = false,
-        block: RunTimeContext.() -> Unit,
+        block: (RunTimeContext.() -> Unit)? = null,
     ) {
         ast?.let {
-            Output.print("AST output:")
+            block?.let {
+                Output.print("AST output:")
+            }
             testScriptFromAst(
                 fallbackOptimization = fallbackOptimization,
                 runtimeOptimization = runtimeOptimization,
                 target = ast,
             ) {
-                block(this)
+                block?.invoke(this)
             }
         }
 
         source?.let {
-            Output.print("Source output:")
+            block?.let {
+                Output.print("Source output:")
+            }
             testScriptFromSource(
                 fallbackOptimization = fallbackOptimization,
                 runtimeOptimization = runtimeOptimization,
                 source = source,
             ) {
-                block(this)
+                block?.invoke(this)
             }
         }
     }

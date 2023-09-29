@@ -389,6 +389,9 @@ class ExpressionRunner(
         context: FunctionContext,
     ): Any? {
         val result = condition.runExpression(context)
+        if (result !is Boolean) {
+            throw RuntimeException("condition of 'if' expression must be a boolean")
+        }
         return if (result == true) {
             then.fold<Expression, Any?>(null) { _, expression ->
                 expression.runExpression(context)

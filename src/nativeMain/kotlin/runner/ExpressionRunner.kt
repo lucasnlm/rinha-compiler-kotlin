@@ -488,9 +488,6 @@ class ExpressionRunner(
             (target.parameters.size != this.arguments.size) -> {
                 throw RuntimeException("missing param at '$callerName' call")
             }
-            target.isInline() -> {
-                target.value.first().runExpression(context)
-            }
             else -> {
                 // Check for some predefined optimizations
                 if (context.runtimeOptimization && context.recursiveCall < 2) {

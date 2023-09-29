@@ -29,10 +29,6 @@ sealed class Expression {
         override fun toString(): String {
             return "<#closure>"
         }
-
-        fun isInline(): Boolean {
-            return parameters.isEmpty() && value.size == 1
-        }
     }
 
     /**

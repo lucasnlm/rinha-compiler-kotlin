@@ -387,6 +387,17 @@ class ExpressionRunnerTest {
     }
 
     @Test
+    fun `test insertionSortSource`() {
+        testScript(
+            ast = HardcodedScripts.insertionSortAst,
+            source = HardcodedScripts.insertionSortSource,
+        ) {
+            assertEquals(1, output.size)
+            assertEquals("(1, (2, (3, (4, (5, 0)))))", output.first())
+        }
+    }
+
+    @Test
     fun `test doubleTryErrorSource`() {
         testScript(
             source = HardcodedScripts.doubleTryErrorSource,
